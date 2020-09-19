@@ -1,0 +1,16 @@
+# Ignore __pycache__
+*__pycache__
+# Ignore .env
+.env
+# Ignore log
+log
+# Ignore databases
+db/data_*.db
+# Ignore json files
+*.json
+# Ignore caches
+cache
+# Ignore backup files
+backup_*
+# Ignore modmails
+mail/*
