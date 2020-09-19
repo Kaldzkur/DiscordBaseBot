@@ -9,6 +9,8 @@ You need a few PyPI packages for this bot to work:
 pip install -U discord.py
 pip install -U python-dotenv
 pip install -U pytz
+pip install -U emoji
+pip install -U python-dateutil
 ````
 ## Extending the bot for your discord
 Creating your own custom bot is fairly easy.
