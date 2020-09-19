@@ -681,8 +681,8 @@ if __name__ == "__main__":
   #loading the secret key for this bot
   dotenv.load_dotenv()
   TOKEN = os.getenv("DISCORD_TOKEN")
-  APPA = os.getenv("APPA_ID")
-  SIN = os.getenv("SIN_ID")
+  APPA = int(os.getenv("APPA_ID"))
+  SIN = int(os.getenv("SIN_ID"))
   cog_categories = {
     "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
     "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands"],

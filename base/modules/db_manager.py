@@ -3,6 +3,7 @@ try:
 except:
   import sqlite3
 import re
+import os
 from base.modules.constants import DB_PATH as path
 
 class DatabaseManager:
@@ -139,6 +140,8 @@ class DatabaseManager:
 
 class Database(DatabaseManager):
   def __init__(self, _identifier):
+    if not os.path.isdir(path):
+      os.mkdir(path)
     super().__init__(f"{path}/data_{_identifier}.db")
     self.id = _identifier
     self.tables = {}
