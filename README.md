@@ -8,4 +8,4 @@ You need a few PyPI packages for this bot to work:
 pip install -U discord.py
 pip install -U python-dotenv
 pip install -U pytz
-```
+````
