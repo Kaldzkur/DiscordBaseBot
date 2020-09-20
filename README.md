@@ -50,6 +50,7 @@ if __name__ == "__main__":
 ### Administration
 #### Set the activity of the bot
 #### Shutdown, reboot, upgrade
+#### ID lookup, invite link
 ### Database Management
 #### Create/delete table, insert/delete row, select, general query
 #### Database backup
