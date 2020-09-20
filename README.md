@@ -46,6 +46,33 @@ if __name__ == "__main__":
   bot.run(TOKEN)
 ````
 
+## Main Features
+### Administration
+#### Set the activity of the bot
+#### Shutdown, reboot, upgrade
+### Database Management
+#### Create/delete table, insert/delete row, select, general query
+#### Database backup
+### Settings
+#### Add/edit/remove settings
+#### Default settings
+### Custom Commands
+#### Add/edit/remove custom commands and command groups
+#### Lock/unlock/globalize/unglobalize custom commands
+### Channel Management
+#### Channel mute/unmute/open/close
+#### Channel monitor
+### Secrete Channels
+#### Create secrete channels
+#### Close, auto-delete, keep alive
+### Message Management
+#### Bulk delete, bulk move, announce, edit, react
+#### Schedule messages, commands
+#### Storage in database
+### User Management
+#### Warn, kick, ban, mute, prune
+#### Statisctics tracking
+#### Welcome message
 
 ## Contributing the bot
 Contributions are welcome; they will be reviewed before they are merged.
