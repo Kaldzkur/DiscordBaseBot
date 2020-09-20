@@ -25,24 +25,27 @@ def get_cmd_parent_child(root, cmd_name):
     child = cmd_name_split[1]
     parent_cmd = root.get_command(parent)
     if parent_cmd is None:
-      raise NameError(f"Command is invalid because its parent command "
+      raise NameError(f"Command '{cmd_name}' is invalid because its parent command "
         f"'{root.qualified_name+' ' if hasattr(root, 'qualified_name') else ''}{parent}' does not exists.")
-    if parent_cmd.cog_name:
-      # would it be better to check the db or subclass custom commmands to check it?
-      raise NameError(f"Command is invalid because its parent command "
-        f"'{parent_cmd.qualified_name}' is in cog {parent_cmd.cog_name} and not customizable.")
     if not isinstance(parent_cmd, commands.Group):
-      raise NameError(f"Command is invalid because its parent command "
+      raise NameError(f"Command '{cmd_name}' is invalid because its parent command "
         f"'{parent_cmd.qualified_name}' is not a command group.")
     return get_cmd_parent_child(parent_cmd, child)
     
-def get_cmd_attributes(bot, cmd_name, expected, check_child=False):
+def get_cmd_attributes(bot, guild, cmd_name, expected, check_child=False):
   # find the parent command (or bot) and map the command (alias) name to the qualified name
   parent, child = get_cmd_parent_child(bot, cmd_name)
+  if parent != bot: # check whether the parent command is a valid custom command in guild db
+    parent_cmd = bot.db[guild.id].select("user_commands", parent.qualified_name)
+    if parent_cmd is None or not parent_cmd["isgroup"]:
+      raise NameError(f"Command '{cmd_name}' is invalid because {parent.qualified_name} is not a custom command group in this server.")
   existing_cmd = parent.get_command(child)
   if expected:
+    cmd = bot.db[guild.id].select("user_commands", parent.qualified_name)
     if existing_cmd is None:
       raise NameError(f"Command '{cmd_name}' does not exist.")
+    elif cmd is None:
+      raise NameError(f"Command '{cmd_name}' is not a custom command in this server.")
     else:
       if check_child and isinstance(existing_cmd, commands.Group) and len(existing_cmd.commands) > 0:
         raise LookupError(f"Command '{cmd_name}' cannot be removed because it has at least one child command.")
@@ -55,30 +58,72 @@ def get_cmd_attributes(bot, cmd_name, expected, check_child=False):
       child_name = child
       qualified_name = f"{parent.qualified_name} {child}" if hasattr(parent, "qualified_name") else child
   return (parent, child_name, qualified_name)
-    
+  
+def analyze_existing_cmd(bot, guild, cmd_name, remove=False):
+  parent, child = get_cmd_parent_child(bot, cmd_name)
+  if parent != bot: # check whether the parent command is a valid custom command in guild db
+    parent_cmd = bot.db[guild.id].select("user_commands", parent.qualified_name)
+    if parent_cmd is None or not parent_cmd["isgroup"]:
+      raise NameError(f"Command '{cmd_name}' is invalid because {parent.qualified_name} is not a custom command group in this server.")
+  existing_cmd = parent.get_command(child)
+  if existing_cmd is None:
+    raise NameError(f"Command '{cmd_name}' does not exist.")
+  if remove and isinstance(existing_cmd, commands.Group) and len(existing_cmd.commands) > 0:
+    raise LookupError(f"Command '{cmd_name}' cannot be removed because it has at least one child command.")
+  cmd = bot.db[guild.id].select("user_commands", existing_cmd.qualified_name)
+  if cmd is None:
+    raise NameError(f"Command '{cmd_name}' is not a custom command in this server.")
+  return (parent, existing_cmd.name, cmd)
+  
+def analyze_new_cmd(bot, guild, cmd_name):
+  parent, child = get_cmd_parent_child(bot, cmd_name)
+  if parent != bot: # check whether the parent command is a valid custom command in guild db
+    parent_cmd = bot.db[guild.id].select("user_commands", parent.qualified_name)
+    if parent_cmd is None or not parent_cmd["isgroup"]:
+      raise NameError(f"Command '{cmd_name}' is invalid because {parent.qualified_name} is not a custom command group in this server.")
+  existing_cmd = parent.get_command(child)
+  if existing_cmd is not None:
+    raise NameError(f"Command '{cmd_name}' already exists.")
+  return (parent, child, f"{parent.qualified_name} {child}" if hasattr(parent, "qualified_name") else child)
      
-def make_user_command(cmd_name, cmd_text, **attributes):
+def make_user_command(guild, cmd_name, cmd_text, **attributes):
+  async def server_check(context):
+    return context.guild == guild if guild else True
   @commands.command(
-    name=cmd_name,
-    description="Usage"
+    name=cmd_name
   )
+  @commands.check(server_check)
   async def _wrapper_user_cmd(context):
     await context.send(cmd_text)
+  @_wrapper_user_cmd.error
+  async def _wrapper_user_cmd_error(context, error):
+    if isinstance(error, commands.CheckFailure):
+      await context.send(f"Sorry {context.author.mention}, but you do not have permission to use this command in this server.")
+    else:
+      await context.send(f"Sorry {context.author.mention}, something unexpected happened while excuting this command.")
   _wrapper_user_cmd.update(**attributes)
   return _wrapper_user_cmd
     
-def make_user_group(cmd_name, cmd_text, **attributes):
+def make_user_group(guild, cmd_name, cmd_text, **attributes):
+  async def server_check(context):
+    return context.guild == guild if guild else True
   @commands.group(
     name=cmd_name,
     invoke_without_command=True,
-    case_insensitive=True,
-    description="Usage"
+    case_insensitive=True
   )
+  @commands.check(server_check)
   async def _wrapper_user_cmd(context):
     if cmd_text:
       await context.send(cmd_text)
     else:
       await context.send_help(context.command)
+  @_wrapper_user_cmd.error
+  async def _wrapper_user_cmd_error(context, error):
+    if isinstance(error, commands.CheckFailure):
+      await context.send(f"Sorry {context.author.mention}, but you do not have permission to use this command in this server.")
+    else:
+      await context.send(f"Sorry {context.author.mention}, something unexpected happened while excuting this command.")
   _wrapper_user_cmd.update(**attributes)
   return _wrapper_user_cmd
   
@@ -121,7 +166,7 @@ def move_subcommands(old_cmd, new_cmd):
       else:
         new_cmd.add_command(command)
 
-def set_new_cmd(parent, child_name, cmd_text, attributes, is_group=False, smart_fix=False):
+def set_new_cmd(guild, parent, child_name, cmd_text, attributes, is_group=False, smart_fix=False):
   # check aliases here
   if "aliases" in attributes:
     if smart_fix:
@@ -131,15 +176,21 @@ def set_new_cmd(parent, child_name, cmd_text, attributes, is_group=False, smart_
       check_aliases(parent, child_name, attributes["aliases"])
   old_cmd = parent.remove_command(child_name) # remove the command if exits, it doesn't hurt if the command does not exist
   if is_group:
-    usr_command = make_user_group(child_name, cmd_text, **attributes)
+    usr_command = make_user_group(guild, child_name, cmd_text, **attributes)
   else:
-    usr_command = make_user_command(child_name, cmd_text, **attributes)
+    usr_command = make_user_command(guild, child_name, cmd_text, **attributes)
   parent.add_command(usr_command)
   move_subcommands(old_cmd, usr_command)
   return usr_command
   
-def add_cmd_from_row(bot, cmd):
+def add_cmd_from_row(bot, guild, cmd):
   attributes = json_load_dict(cmd["attributes"])
-  parent, child, cmd_name = get_cmd_attributes(bot, cmd["cmdname"], False)
-  set_new_cmd(parent, child, cmd["message"], attributes, cmd["isgroup"], True)
+  parent, child, cmd_name = analyze_new_cmd(bot, guild, cmd["cmdname"])
+  if cmd["glob"]:
+    guild = None
+  set_new_cmd(guild, parent, child, cmd["message"], attributes, cmd["isgroup"], cmd["glob"])
+  
+def add_cmd_from_attributes(bot, guild, cmd_name, cmd_msg, attributes, isgroup):
+  parent, child, cmd_name = analyze_new_cmd(bot, guild, cmd_name)
+  set_new_cmd(guild, parent, child, cmd_msg, attributes, isgroup)
   

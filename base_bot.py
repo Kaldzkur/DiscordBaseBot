@@ -157,7 +157,7 @@ class BaseBot(commands.Bot):
       cmds.sort(key=lambda cmd: cmd["cmdname"])
       for cmd in cmds:
         try:
-          add_cmd_from_row(self, cmd)
+          add_cmd_from_row(self, guild, cmd)
         except Exception as e:
           print(f"Error when adding command {cmd['cmdname']}: {e}")
 
@@ -246,7 +246,7 @@ class BaseBot(commands.Bot):
     if "user_statistics" not in self.db[guild.id]:
       self.db[guild.id].create_table("user_statistics", "userid", userid="int", total_messages="int", total_commands="int", total_words="int", total_reacts="int", reacts_to_own="int")
     if "user_commands" not in self.db[guild.id]:
-      self.db[guild.id].create_table("user_commands", "cmdname", cmdname="txt", message="txt", attributes="txt", isgroup="int_not_null", lock="int_not_null")
+      self.db[guild.id].create_table("user_commands", "cmdname", cmdname="txt", message="txt", attributes="txt", isgroup="int_not_null", lock="int_not_null", glob="int_not_null")
     if "messages" not in self.db[guild.id]:
       self.db[guild.id].create_table("messages", "mid", mid="int", time="real", aid="int", author="txt", cid="int", channel="txt", content="txt", embeds="txt", files="txt")
 
