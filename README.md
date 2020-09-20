@@ -31,7 +31,6 @@ if __name__ == "__main__":
   dotenv.load_dotenv()
   TOKEN = os.getenv("DISCORD_TOKEN")
   OWNER = os.getenv("OWNER_ID")
-  SERVER = os.getenv("SERVER_ID")
   #This lookup maps all cog names to a name used in the interactive help.
   cog_categories = {
     "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
@@ -44,7 +43,6 @@ if __name__ == "__main__":
     case_insensitive = True,
     help_command = InteractiveHelpCommand(cog_categories)
   )
-  bot.set_main_server(SERVER)
   bot.run(TOKEN)
 ````
 
