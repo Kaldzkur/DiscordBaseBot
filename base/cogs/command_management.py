@@ -36,7 +36,7 @@ class CommandCog(commands.Cog, name="Command Management"):
 
   @_cmd.command(
     name="add",
-    brief="Adds a command to the bot",
+    brief="Adds a command",
     help="Adds a new permanent command to the bot. The command will send the text, when ?name is invoked. String key-value pairs are supported and will be passed to the command, but name attribute will be ignored. You MUST add a new line between the key-value pairs, and MUST NOT add a new line inside the key-value pairs (except cmd_text), the last key MUST be cmd_text which is the text sent by the command.",
     usage="<cmd_name> [attribute=value]... [cmd_text=value]"
   )
@@ -50,7 +50,7 @@ class CommandCog(commands.Cog, name="Command Management"):
     
   @_cmd.command(
     name="gadd",
-    brief="Adds a command group to the bot",
+    brief="Adds a command group",
     help="Adds a new permanent command group to the bot. The command will send the text or send the help if text is empty, when ?name is invoked. String key-value pairs are supported and will be passed to the command, but name attribute will be ignored. You MUST add a new line between the key-value pairs, and MUST NOT add a new line inside the key-value pairs (except cmd_text), the last key MUST be cmd_text which is the text sent by the command.",
     usage="<cmd_name> [attribute=value]... [cmd_text=value]"
   )
@@ -66,7 +66,7 @@ class CommandCog(commands.Cog, name="Command Management"):
     
   @_cmd.command(
     name="rename",
-    brief="Remane a custom command of the bot",
+    brief="Remane a custom command",
   )
   @can_edit_commands()
   async def _rename_cmd(self, context, cmd_name:cmd_name_converter, new_name:cmd_name_converter):
@@ -96,7 +96,7 @@ class CommandCog(commands.Cog, name="Command Management"):
 
   @_cmd.command(
     name="edit",
-    brief="Updates a custom command of the bot",
+    brief="Updates a custom command",
     aliases=["update"],
     usage="<cmd_name> [attribute=value]... [cmd_text=value]"
   )
@@ -120,7 +120,7 @@ class CommandCog(commands.Cog, name="Command Management"):
 
   @_cmd.command(
     name="rm",
-    brief="Removes a command from the bot",
+    brief="Removes a custom command",
     aliases=["delete", "del"]
   )
   @can_edit_commands()
@@ -164,7 +164,7 @@ class CommandCog(commands.Cog, name="Command Management"):
       
   @_cmd.command(
     name="lock",
-    brief="Locks a command",
+    brief="Locks a custom command",
   )
   @has_admin_role()
   async def _lock_cmd(self, context, cmd_name:cmd_name_converter):
@@ -179,7 +179,7 @@ class CommandCog(commands.Cog, name="Command Management"):
       
   @_cmd.command(
     name="unlock",
-    brief="Unlocks a command",
+    brief="Unlocks a custom command",
   )
   @has_admin_role()
   async def _unlock_cmd(self, context, cmd_name:cmd_name_converter):
