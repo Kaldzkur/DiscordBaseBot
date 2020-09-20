@@ -12,6 +12,11 @@ pip install -U pytz
 pip install -U emoji
 pip install -U python-dateutil
 ````
+And you also need a .env file to specify all environment parameters:
+```text
+DISCORD_TOKEN={YOUR_BOT_TOKEN}
+OWNER_ID={YOUR_DISCORD_ID}
+```
 ## Extending the bot for your discord
 Creating your own custom bot is fairly easy.
 First you fork this project and create a new file for your bot in the root directory.
