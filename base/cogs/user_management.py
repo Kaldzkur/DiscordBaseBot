@@ -559,6 +559,39 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
   @_ban.command(
+    name="id",
+    brief="Bans using the user id",
+    description="Will ban a user, even if he/she is not in the discord server.",
+    help="The parameter `user_id` should be a user ID or a mention of that user. The optional `days` parameter specifies how many days worth of messages should be deleted - a value between 0 and 7.",
+    usage="user_id [days=1] [reason=not specified]",
+  )
+  @commands.has_permissions(ban_members=True)
+  @commands.bot_has_permissions(ban_members=True)
+  @has_mod_role()
+  async def _ban_id(self, context, user_id=None, days: typing.Optional[int] = 1, *, reason="not specified"):
+    if user_id is None:
+      await context.send(f"Sorry {context.author.mention}, but you need to specify a user ID.")
+      return
+    if not(0 <= days <= 7):
+      await context.send(f"Sorry {context.author.mention}, `days` needs to be between 0 and 7. Refer to `?help ban id` for more information.")
+      return
+    original_uid = user_id
+    if "@" in user_id:
+      #<@!123456789> - when an @mention was used.
+      user_id = user_id[3:-1]
+    try:
+      user_id = int(user_id)
+    except:
+      raise commands.UserInputError(f"Could not convert '{original_uid}' to a valid user ID.")
+    user = await self.bot.fetch_user(user_id)
+    await context.invoke(self.bot.get_command("ban"), [user], days, reason=reason)
+    #await context.guild.ban(user, reason=reason, delete_message_days=days)
+    #await context.send(f"```{user} has been banned from the server.```")
+    #title = "User was banned from server"
+    #fields = {"User":f"{user.mention}\n{user}", "Reason":reason}
+    #await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+
+  @_ban.command(
     name="rm",
     brief="Unbans a user",
     help="A command to unban (only) one user from the server. The user should be either the full username or the user id.",
