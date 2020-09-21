@@ -527,10 +527,11 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
                 "Reason":reason}
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
-  @commands.command(
+  @commands.group(
     name="ban",
     brief="Bans user(s)",
     help="A command that bans one or more users.",
+    invoke_without_command=True
   )
   @commands.has_permissions(ban_members=True)
   @commands.bot_has_permissions(ban_members=True)
@@ -556,18 +557,19 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
                 "Reason":reason}
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
-  @commands.command(
-    name="unban",
+  @_ban.command(
+    name="rm",
     brief="Unbans a user",
     help="A command to unban (only) one user from the server. The user should be either the full username or the user id.",
-    usage="<user> [reason]"
+    usage="<user> [reason]",
+    aliases=["remove"]
   )
   @commands.has_permissions(ban_members=True)
   @commands.bot_has_permissions(ban_members=True)
   @has_mod_role()
   async def _unban(self, context, member=None, *, reason="not specified"):
     if member is None:
-      await context.send_help("ban")
+      await context.send_help("ban rm")
       return
     banned_users = await context.guild.bans()
     if "#" in member:
