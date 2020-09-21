@@ -536,9 +536,9 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   @commands.has_permissions(ban_members=True)
   @commands.bot_has_permissions(ban_members=True)
   @has_mod_role()
-  async def _ban(self, context, users: commands.Greedy[discord.User], *, reason="not specified"):
+  async def _ban(self, context, users: commands.Greedy[discord.User], days: typing.Optional[int] = 1, *, reason="not specified"):
     if len(users) == 0:
-      await context.send_help("ban")
+      await context.send(f"Sorry {context.author.mention}, but I could not find the specified user(s).")
       return
     for user in users:
       if user.id == self.bot.user.id:
@@ -550,7 +550,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       elif user.id in self.bot.owner_ids:
         await context.send(f"Sorry {context.author.mention}, but I can't betray my owner!")
         continue
-      await user.ban(reason=reason)
+      await context.guild.ban(user, reason=reason, delete_message_days=days)
       await context.send(f"```{user} has been banned from the server.```")
       title = "User was banned from server"
       fields = {"User":f"{user.mention}\n{user}",
