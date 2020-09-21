@@ -233,14 +233,24 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       await context.send(f"Sorry {context.author.mention}, but no valid user(s) were found.")
       return
     for user in members:
-      embed = discord.Embed(title=f"{user.name} Info", colour=user.colour) 
-      embed.set_author(name=f"{user.name}", url=user.avatar_url)
-      embed.add_field(name="User:", value=f"{user.name}\n{user}", inline=False)
-      embed.add_field(name="User ID:", value=f"{user.id}", inline=False)
+      embed = discord.Embed(title=f"User Information", colour=user.colour)
+      if user.bot:
+        type = "Bot"
+      elif user.system:
+        type = "User (Discord Official)"
+      else:
+        type = "User"
+      embed.add_field(name=f"{type}:", value=f"{user.name}\n{user}", inline=False)
+      embed.add_field(name="ID:", value=f"{user.id}", inline=False)
       embed.add_field(name="Created on:", value=f"{user.created_at}", inline=False)
       if hasattr(user, "joined_at"): #member specific attribute
         embed.add_field(name=f"Joined {context.guild.name} on:", value=f"{user.joined_at}", inline=False)
       await context.send(content=None, embed=embed)
+    users = "\n".join([f"{user.mention}({user})" for user in members])
+    title = "User fetched user information"
+    fields = {"User":f"{context.author.mention}\n{context.author}",
+              "Target User(s)":users,
+    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
   @_user_info.command(
     name="id",
