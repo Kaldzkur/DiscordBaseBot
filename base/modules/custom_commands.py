@@ -94,7 +94,7 @@ def make_user_command(guild, cmd_name, cmd_text, permission=0, **attributes):
   @server_check_fun(guild)
   @permission_check_fun(permission)
   async def _wrapper_user_cmd(context, args:commands.Greedy[smart_clean_content]):
-    await context.send(cmd_text.format(*args))
+    await context.send(cmd_text.format(*args, context=context))
   @_wrapper_user_cmd.error
   async def _wrapper_user_cmd_error(context, error):
     if isinstance(error, commands.CheckFailure):
@@ -116,7 +116,7 @@ def make_user_group(guild, cmd_name, cmd_text, permission=0, **attributes):
   @permission_check_fun(permission)
   async def _wrapper_user_cmd(context, args:commands.Greedy[smart_clean_content]):
     if cmd_text:
-      await context.send(cmd_text.format(*args))
+      await context.send(cmd_text.format(*args, context=context))
     else:
       await context.send_help(context.command)
   @_wrapper_user_cmd.error
