@@ -221,6 +221,39 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       embed.set_footer(text="USER STATISTICS")
       await context.send(content=None, embed=embed)
 
+  @commands.group(
+    name="info",
+    brief="Shows user info",
+    aliases=["user"],
+    invoke_without_command=True,
+  )
+  @has_mod_role()
+  async def _user_info(self, context, members: commands.Greedy[discord.Member]):
+    if len(members) == 0:
+      await context.send(f"Sorry {context.author.mention}, but no valid user(s) were found.")
+      return
+    for user in members:
+      embed = discord.Embed(title=f"{user.name} Info", colour=user.colour) 
+      embed.set_author(name=f"{user.name}", url=user.avatar_url)
+      embed.add_field(name="User:", value=f"{user.name}\n{user}", inline=False)
+      embed.add_field(name="User ID:", value=f"{user.id}", inline=False)
+      embed.add_field(name="Created on:", value=f"{user.created_at}", inline=False)
+      if hasattr(user, "joined_at"): #member specific attribute
+        embed.add_field(name=f"Joined {context.guild.name} on:", value=f"{user.joined_at}", inline=False)
+      await context.send(content=None, embed=embed)
+
+  @_user_info.command(
+    name="id",
+    brief="Shows user info based on id",
+    description="A command that will show user information based on the given user id.",
+    help="Note: This command will also work if the user has left the discord server.",
+  )
+  @has_mod_role()
+  async def _user_info_id(self, context, *user_ids):
+    int_user_ids = [int(id) if "@" not in id else int(id[3:-1]) for id in user_ids]
+    users = [await self.bot.fetch_user(id) for id in int_user_ids]
+    await context.invoke(self.bot.get_command("info"), users)
+
   @commands.command(
     name="mute",
     brief="Mutes one or more users",
