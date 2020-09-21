@@ -566,7 +566,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   @commands.has_permissions(ban_members=True)
   @commands.bot_has_permissions(ban_members=True)
   @has_mod_role()
-  async def _ban_id(self, context):
+  async def _ban_info(self, context):
     bans = await context.guild.bans()
     for i, ban in enumerate(bans):
       await context.send(f"Banned User {i}:```User: {ban.user.name}({ban.user})\nUser ID: {ban.user.id}```")
