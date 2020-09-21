@@ -89,7 +89,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     await context.send(f"> Deleting bot-specific channels and roles...")
     await self.bot.delete_logs(context.guild)
     await self.bot.delete_roles(context.guild)
-    await self.context.guild.leave()
+    await context.guild.leave()
 
   @commands.command(
     name="nick",
@@ -154,7 +154,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     usage="[@mention/#channel]..."
   )
   @has_admin_role()
-  async def _id(self, context, items:commands.Greedy[typing.Union[discord.Member,discord.Role,discord.TextChannel]]):
+  async def _id(self, context, items:commands.Greedy[typing.Union[discord.User,discord.Role,discord.TextChannel]]):
     if len(items) == 0:
       await context.send_help("id")
       return

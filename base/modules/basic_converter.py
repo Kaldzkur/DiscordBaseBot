@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import pytz
 import re
 from emoji import UNICODE_EMOJI
+from base.modules.access_checks import mod_role_check
 
 
 def FutureTimeConverter(argument):
@@ -124,3 +125,11 @@ class MemberOrUser(commands.MemberConverter):
         return user
       except:
         raise commands.UserInputError(f"Could not convert '{arg}' to a valid member or user.")
+        
+class smart_clean_content(commands.clean_content):
+  # this will convert arg to clean content if the user is not a mod
+  async def convert(self, context, arg):
+    if mod_role_check(context):
+      return arg
+    else:
+      return await super().convert(context, arg)

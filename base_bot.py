@@ -150,14 +150,14 @@ class BaseBot(commands.Bot):
     except:
       pass
     
-  def load_custom_commands(self, guild):
+  async def load_custom_commands(self, guild):
     #Add all stores user_commands
     cmds = self.db[guild.id].select("user_commands")
     if cmds is not None:
       cmds.sort(key=lambda cmd: cmd["cmdname"])
       for cmd in cmds:
         try:
-          add_cmd_from_row(self, guild, cmd)
+          await add_cmd_from_row(self, guild, cmd)
         except Exception as e:
           print(f"Error when adding command {cmd['cmdname']}: {e}")
 
@@ -246,7 +246,7 @@ class BaseBot(commands.Bot):
     if "user_statistics" not in self.db[guild.id]:
       self.db[guild.id].create_table("user_statistics", "userid", userid="int", total_messages="int", total_commands="int", total_words="int", total_reacts="int", reacts_to_own="int")
     if "user_commands" not in self.db[guild.id]:
-      self.db[guild.id].create_table("user_commands", "cmdname", cmdname="txt", message="txt", attributes="txt", isgroup="int_not_null", lock="int_not_null", glob="int_not_null")
+      self.db[guild.id].create_table("user_commands", "cmdname", cmdname="txt", message="txt", attributes="txt", isgroup="int_not_null", lock="int_not_null", glob="int_not_null", perm="int_not_null")
     if "messages" not in self.db[guild.id]:
       self.db[guild.id].create_table("messages", "mid", mid="int", time="real", aid="int", author="txt", cid="int", channel="txt", content="txt", embeds="txt", files="txt")
 
@@ -505,7 +505,7 @@ class BaseBot(commands.Bot):
 
   async def on_guild_join(self, guild):
     await self.init_bot(guild)
-    self.load_custom_commands(guild)
+    await self.load_custom_commands(guild)
 
   async def on_ready(self):
     self.intialized = {}
@@ -527,7 +527,7 @@ class BaseBot(commands.Bot):
       return True
     self.load_all_cogs()
     for guild in self.guilds:
-      self.load_custom_commands(guild) # make sure the custom commands are loaded after cog is loaded
+      await self.load_custom_commands(guild) # make sure the custom commands are loaded after cog is loaded
     self.start_at = time.time()
     
   def load_all_cogs(self):

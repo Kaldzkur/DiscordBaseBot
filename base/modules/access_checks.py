@@ -4,28 +4,30 @@ def is_server_owner():
   async def predicate(context):
     return context.author.id == context.guild.owner.id
   return commands.check(predicate)
+  
+def admin_role_check(context):
+  if context.author.id in context.bot.owner_ids:
+    return True
+  admin_role = context.bot.get_admin_role(context.guild)
+  if admin_role is None:
+    return False
+  else:
+    return admin_role in context.author.roles
 
 def has_admin_role():
-  async def predicate(context):
-    if context.author.id in context.bot.owner_ids:
-      return True
-    admin_role = context.bot.get_admin_role(context.guild)
-    if admin_role is None:
-      return False
-    else:
-      return admin_role in context.author.roles
-  return commands.check(predicate)
+  return commands.check(admin_role_check)
+
+def mod_role_check(context):
+  if context.author.id in context.bot.owner_ids:
+    return True
+  mod_role = context.bot.get_mod_role(context.guild)
+  if mod_role is None:
+    return False
+  else:
+    return mod_role in context.author.roles
   
 def has_mod_role():
-  async def predicate(context):
-    if context.author.id in context.bot.owner_ids:
-      return True
-    mod_role = context.bot.get_mod_role(context.guild)
-    if mod_role is None:
-      return False
-    else:
-      return mod_role in context.author.roles
-  return commands.check(predicate)
+  return commands.check(mod_role_check)
   
 def can_edit_commands():
   async def predicate(context):
