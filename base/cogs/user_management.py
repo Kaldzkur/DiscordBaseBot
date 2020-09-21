@@ -243,13 +243,14 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       embed.add_field(name=f"{type}:", value=f"{user.name}\n{user}", inline=False)
       embed.add_field(name="ID:", value=f"{user.id}", inline=False)
       embed.add_field(name="Created on:", value=f"{user.created_at}", inline=False)
+      embed.set_thumbnail(url=user.avatar_url)
       if hasattr(user, "joined_at"): #member specific attribute
         embed.add_field(name=f"Joined {context.guild.name} on:", value=f"{user.joined_at}", inline=False)
       await context.send(content=None, embed=embed)
     users = "\n".join([f"{user.mention}({user})" for user in members])
     title = "User fetched user information"
     fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Target User(s)":users,
+              "Target User(s)":users}
     await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
   @_user_info.command(
