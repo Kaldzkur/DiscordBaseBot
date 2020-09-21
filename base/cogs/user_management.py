@@ -7,7 +7,7 @@ from pathlib import Path
 from discord.ext import commands, tasks
 from base.modules.access_checks import has_mod_role, has_admin_role, is_server_owner
 from base.modules.message_helper import wait_user_confirmation
-from base.modules.basic_converters import MemberOrUser
+from base.modules.basic_converter import MemberOrUser
 
 class UserManagementCog(commands.Cog, name="User Management Commands"):
   def __init__(self, bot):
