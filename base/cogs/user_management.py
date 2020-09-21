@@ -535,24 +535,24 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   @commands.has_permissions(ban_members=True)
   @commands.bot_has_permissions(ban_members=True)
   @has_mod_role()
-  async def _ban(self, context, members: commands.Greedy[discord.Member], *, reason="not specified"):
-    if len(members) == 0:
+  async def _ban(self, context, users: commands.Greedy[discord.User], *, reason="not specified"):
+    if len(users) == 0:
       await context.send_help("ban")
       return
-    for member in members:
-      if member.id == self.bot.user.id:
+    for user in users:
+      if user.id == self.bot.user.id:
         await context.send(f"Sorry {context.author.mention}, but I can't ban myself. If you want to ban me, do it yourself!")
         continue
-      elif member.id == context.author.id:
+      elif user.id == context.author.id:
         await context.send(f"Sorry {context.author.mention}, but you can't ban yourself. If you want to leave, just leave!")
         continue
-      elif member.id in self.bot.owner_ids:
+      elif user.id in self.bot.owner_ids:
         await context.send(f"Sorry {context.author.mention}, but I can't betray my owner!")
         continue
-      await member.ban(reason=reason)
-      await context.send(f"```{member} has been banned from the server.```")
+      await user.ban(reason=reason)
+      await context.send(f"```{user} has been banned from the server.```")
       title = "User was banned from server"
-      fields = {"User":f"{member.mention}\n{member}",
+      fields = {"User":f"{user.mention}\n{user}",
                 "Reason":reason}
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
