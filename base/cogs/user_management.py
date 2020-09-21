@@ -559,6 +559,19 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
   @_ban.command(
+    name="info",
+    brief="Shows all banned users",
+    description="Will show a list of all banned users.",
+  )
+  @commands.has_permissions(ban_members=True)
+  @commands.bot_has_permissions(ban_members=True)
+  @has_mod_role()
+  async def _ban_id(self, context):
+    bans = await context.guild.bans()
+    for i, ban in enumerate(bans):
+      await context.send(f"Banned User {i}:```User: {ban.user.name}({ban.user})\nUser ID: {ban.user.id}```")
+
+  @_ban.command(
     name="id",
     brief="Bans using the user id",
     description="Will ban a user, even if he/she is not in the discord server.",
