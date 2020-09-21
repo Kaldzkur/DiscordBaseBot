@@ -107,3 +107,20 @@ def cmd_add_converter(argument):
   
 def cmd_name_converter(argument):
   return " ".join(argument.split())
+
+#A converter that will fetch a member in the guild, or a user
+class MemberOrUser(commands.MemberConverter):
+  async def convert(self, context, arg):
+    try:
+      member = await super().convert(context, arg)
+      return member
+    except:
+      try:
+        if "@" in arg: #mention was passed
+          user_id = arg[3:-1]
+        else:
+          user_id = arg
+        user = await context.bot.fetch_user(user_id)
+        return user
+      except:
+        raise commands.UserInputError(f"Could not convert '{arg}' to a valid member or user.")
