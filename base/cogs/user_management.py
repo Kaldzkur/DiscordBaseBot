@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 import discord
 import re
+import typing
 from pathlib import Path
 from discord.ext import commands, tasks
 from base.modules.access_checks import has_mod_role, has_admin_role, is_server_owner
@@ -220,6 +221,50 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       embed.add_field(name="Reactions to own messages:", value=f"{rct_own} ({round(rct_percent, 2)}%)", inline=False)
       embed.set_footer(text="USER STATISTICS")
       await context.send(content=None, embed=embed)
+
+  @commands.group(
+    name="info",
+    brief="Shows user info",
+    aliases=["user"],
+    invoke_without_command=True,
+  )
+  @has_mod_role()
+  async def _user_info(self, context, members: commands.Greedy[discord.Member]):
+    if len(members) == 0:
+      await context.send(f"Sorry {context.author.mention}, but no valid user(s) were found.")
+      return
+    for user in members:
+      embed = discord.Embed(title=f"User Information", colour=user.colour)
+      if user.bot:
+        type = "Bot"
+      elif user.system:
+        type = "User (Discord Official)"
+      else:
+        type = "User"
+      embed.add_field(name=f"{type}:", value=f"{user.name}\n{user}", inline=False)
+      embed.add_field(name="ID:", value=f"{user.id}", inline=False)
+      embed.add_field(name="Created on:", value=f"{user.created_at}", inline=False)
+      embed.set_thumbnail(url=user.avatar_url)
+      if hasattr(user, "joined_at"): #member specific attribute
+        embed.add_field(name=f"Joined {context.guild.name} on:", value=f"{user.joined_at}", inline=False)
+      await context.send(content=None, embed=embed)
+    users = "\n".join([f"{user.mention}({user})" for user in members])
+    title = "User fetched user information"
+    fields = {"User":f"{context.author.mention}\n{context.author}",
+              "Target User(s)":users}
+    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+
+  @_user_info.command(
+    name="id",
+    brief="Shows user info based on id",
+    description="A command that will show user information based on the given user id.",
+    help="Note: This command will also work if the user has left the discord server.",
+  )
+  @has_mod_role()
+  async def _user_info_id(self, context, *user_ids):
+    int_user_ids = [int(id) if "@" not in id else int(id[3:-1]) for id in user_ids]
+    users = [await self.bot.fetch_user(id) for id in int_user_ids]
+    await context.invoke(self.bot.get_command("info"), users)
 
   @commands.command(
     name="mute",
@@ -528,47 +573,95 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
                 "Reason":reason}
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
-  @commands.command(
+  @commands.group(
     name="ban",
     brief="Bans user(s)",
     help="A command that bans one or more users.",
+    invoke_without_command=True
   )
   @commands.has_permissions(ban_members=True)
   @commands.bot_has_permissions(ban_members=True)
   @has_mod_role()
-  async def _ban(self, context, members: commands.Greedy[MemberOrUser], *, reason="not specified"):
-    if len(members) == 0:
-      await context.send_help("ban")
+  async def _ban(self, context, users: commands.Greedy[MemberOrUser], days: typing.Optional[int] = 1, *, reason="not specified"):
+    if len(users) == 0:
+      await context.send(f"Sorry {context.author.mention}, but I could not find the specified user(s).")
       return
-    for member in members:
-      if member.id == self.bot.user.id:
+    for user in users:
+      if user.id == self.bot.user.id:
         await context.send(f"Sorry {context.author.mention}, but I can't ban myself. If you want to ban me, do it yourself!")
         continue
-      elif member.id == context.author.id:
+      elif user.id == context.author.id:
         await context.send(f"Sorry {context.author.mention}, but you can't ban yourself. If you want to leave, just leave!")
         continue
-      elif member.id in self.bot.owner_ids:
+      elif user.id in self.bot.owner_ids:
         await context.send(f"Sorry {context.author.mention}, but I can't betray my owner!")
         continue
-      await member.ban(reason=reason)
-      await context.send(f"```{member} has been banned from the server.```")
+      await context.guild.ban(user, reason=reason, delete_message_days=days)
+      await context.send(f"```{user} has been banned from the server.```")
       title = "User was banned from server"
-      fields = {"User":f"{member.mention}\n{member}",
+      fields = {"User":f"{user.mention}\n{user}",
                 "Reason":reason}
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
-  @commands.command(
-    name="unban",
+  @_ban.command(
+    name="info",
+    brief="Shows all banned users",
+    description="Will show a list of all banned users.",
+  )
+  @commands.has_permissions(ban_members=True)
+  @commands.bot_has_permissions(ban_members=True)
+  @has_mod_role()
+  async def _ban_info(self, context):
+    bans = await context.guild.bans()
+    for i, ban in enumerate(bans):
+      await context.send(f"Banned User {i}: ```User: {ban.user.name}({ban.user})\nUser ID: {ban.user.id}\nReason:{ban.reason}```")
+
+  @_ban.command(
+    name="id",
+    brief="Bans using the user id",
+    description="Will ban a user, even if he/she is not in the discord server.",
+    help="The parameter `user_id` should be a user ID or a mention of that user. The optional `days` parameter specifies how many days worth of messages should be deleted - a value between 0 and 7.",
+    usage="user_id [days=1] [reason=not specified]",
+  )
+  @commands.has_permissions(ban_members=True)
+  @commands.bot_has_permissions(ban_members=True)
+  @has_mod_role()
+  async def _ban_id(self, context, user_id=None, days: typing.Optional[int] = 1, *, reason="not specified"):
+    if user_id is None:
+      await context.send(f"Sorry {context.author.mention}, but you need to specify a user ID.")
+      return
+    if not(0 <= days <= 7):
+      await context.send(f"Sorry {context.author.mention}, `days` needs to be between 0 and 7. Refer to `?help ban id` for more information.")
+      return
+    original_uid = user_id
+    if "@" in user_id:
+      #<@!123456789> - when an @mention was used.
+      user_id = user_id[3:-1]
+    try:
+      user_id = int(user_id)
+    except:
+      raise commands.UserInputError(f"Could not convert '{original_uid}' to a valid user ID.")
+    user = await self.bot.fetch_user(user_id)
+    await context.invoke(self.bot.get_command("ban"), [user], days, reason=reason)
+    #await context.guild.ban(user, reason=reason, delete_message_days=days)
+    #await context.send(f"```{user} has been banned from the server.```")
+    #title = "User was banned from server"
+    #fields = {"User":f"{user.mention}\n{user}", "Reason":reason}
+    #await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+
+  @_ban.command(
+    name="rm",
     brief="Unbans a user",
     help="A command to unban (only) one user from the server. The user should be either the full username or the user id.",
-    usage="<user> [reason]"
+    usage="<user> [reason]",
+    aliases=["remove"]
   )
   @commands.has_permissions(ban_members=True)
   @commands.bot_has_permissions(ban_members=True)
   @has_mod_role()
   async def _unban(self, context, member=None, *, reason="not specified"):
     if member is None:
-      await context.send_help("ban")
+      await context.send_help("ban rm")
       return
     banned_users = await context.guild.bans()
     if "#" in member:

@@ -98,7 +98,7 @@ def filter_attributes(attributes, string_attributes=None, bool_attributes=None, 
       filtered_attri[k] = tolist(v)
   return filtered_attri
   
-def cmd_add_converter(argument):
+def cmd_arg_converter(argument):
   attributes, cmd_text = parse_arguments(argument, '\n')
   string_attributes = ["help", "brief", "usage", "description"]
   bool_attributes = ["enabled", "hidden", "ignore_extra", "cooldown_after_parsing", "invoke_without_command", "case_insensitive"]

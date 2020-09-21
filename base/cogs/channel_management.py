@@ -53,6 +53,8 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       
   @commands.Cog.listener()
   async def on_message(self, message):
+    if message.channel.guild.id not in self.monitor:
+      return
     if message.channel.id in self.monitor[message.channel.guild.id]:
       await save_message(self.bot, message)
 
