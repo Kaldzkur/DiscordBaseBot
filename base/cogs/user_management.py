@@ -217,6 +217,10 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     except: #could not send dm
       pass
 
+  #@commands.Cog.listener()
+  #async def on_member_ban(self, guild, user):
+  #async def on_member_unban(self, guild, user):
+
   @commands.command(
     name="statistic",
     brief="Displays user activity stats",
@@ -306,7 +310,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       if hasattr(user, "joined_at"): #member specific attribute
         embed.add_field(name=f"Joined {context.guild.name} on:", value=f"{user.joined_at}", inline=False)
       await context.send(content=None, embed=embed)
-    users = "\n".join([f"{user.mention}({user})" for user in members])
+    users = "\n".join([f"{user} ({user.id})" for user in members])
     title = "User fetched user information"
     fields = {"User":f"{context.author.mention}\n{context.author}",
               "Target User(s)":users}
@@ -340,8 +344,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       self.bot.db[context.guild.id].insert_or_update("users_muted", member.id, expiry)
       await member.add_roles(mute_role)
       await context.send(f"{member.mention} muted.")
-      title = "User has been muted"
-      fields = {"User":f"{member.mention}\n{member}",
+      title = f"{member.display_name} has been muted"
+      fields = {"User":f"{member}\nID: {member.id}",
                 "Reason":reason,
                 "Expires":f"{expire_time} UTC"}
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
@@ -385,8 +389,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       self.bot.db[context.guild.id].delete_row("users_muted", member.id)
       await member.remove_roles(mute_role)
       await context.send(f"{member.mention} unmuted.")
-      title = "User has been unmuted"
-      fields = {"User":f"{member.mention}\n{member}"}
+      title = f"{member.display_name} has been unmuted"
+      fields = {"User":f"{member}\nID: {member.id}"}
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
   @commands.command(
@@ -467,8 +471,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         except:
           pass #DM could not be sent
         await context.send(f"{self.bot.user.name} \*slaps* {member.mention}.\nSlapcount: {warn_count+1}")
-        title = "User has been warned"
-        fields = {"User":f"{member.mention}\n{member}",
+        title = f"{member.display_name} has been warned"
+        fields = {"User":f"{member}\nID: {member.id}",
                   "Reason":reason,
                   "Number of warnings":warn_count+1,
                   "Expires":f"{expire_time} UTC"}
@@ -486,8 +490,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
           pass
         await member.kick(reason="Exceeded number of allowed warnings.")
         await context.send(f"```{member} was forced to leave the server.\nReason: excessive slapcount```")
-        title = "User has been kicked because of reaching the max warnings"
-        fields = {"User":f"{member.mention}\n{member}",
+        title = f"{member.display_name} has been kicked (reached max warnings)"
+        fields = {"User":f"{member}\nID: {member.id}",
                   "Reason":reason,
                   "Number of warnings":warn_count+1,
                   "Expires":f"{expire_time} UTC"}
@@ -579,10 +583,10 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         await context.send(
           f"{self.bot.user.name} removed {number} slap(s) from  {member.mention}.\nSlapcount: {new_warn_count}"
         )
-        title = "User removed warnings"
+        title = f"{context.author.display_name} removed warnings"
         fields = {"User":f"{context.author.mention}\n{context.author}",
                   "Removed warnings":number,
-                  "From":f"{member.mention}\n{member}",
+                  "From":f"{member}\nID: {member.id}",
                   "Expires":f"{expire_time} UTC"}
         await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
       else:
@@ -614,8 +618,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         continue
       await member.kick(reason=reason)
       await context.send(f"```{member} has been kicked from the server.```")
-      title = "User was kicked from server"
-      fields = {"User":f"{member.mention}\n{member}",
+      title = f"{member.display_name} was kicked from server"
+      fields = {"User":f"{member}\nID: {member.id}",
                 "Reason":reason}
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
@@ -647,8 +651,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         continue
       await context.guild.ban(user, reason=reason, delete_message_days=days)
       await context.send(f"```{user} has been banned from the server.```")
-      title = "User was banned from server"
-      fields = {"User":f"{user.mention}\n{user}",
+      title = f"{user.display_name} was banned from server"
+      fields = {"User":f"{user}\nID: {user.id}",
                 "Reason":reason}
       await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
 
@@ -686,7 +690,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         if (ban.user.name, ban.user.discriminator) == (member_name, member_discriminator):
           await context.guild.unban(ban.user)
           await context.send(f"{ban.user} has been unbanned from the server.")
-          title = "User was unbanned from server"
+          title = f"{ban.user.display_name} was unbanned from server"
           fields = {"User":f"{ban.user.name}\n{ban.user}",
                     "Reason":reason}
           await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
@@ -702,7 +706,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         if ban.user.id == user_id:
           await context.guild.unban(ban.user)
           await context.send(f"{ban.user} has been unbanned from the server.")
-          title = "User was unbanned from server"
+          title = f"{ban.user.display_name} was unbanned from server"
           fields = {"User":f"{ban.user.name}\n{ban.user}",
                     "Reason":reason}
           await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
