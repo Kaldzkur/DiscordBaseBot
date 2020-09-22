@@ -54,8 +54,7 @@ if __name__ == "__main__":
 ## Main Features
 ### Administration
 #### Set the activity of the bot
-#### Shutdown, reboot, upgrade
-#### ID lookup, invite link
+#### Shutdown, reboot, upgrade, leave
 #### Logging of all admin/mod/error activities
 ### Database Management
 #### Create/delete table, insert/delete row, select, general query
@@ -64,8 +63,8 @@ if __name__ == "__main__":
 #### Default settings
 #### Add/edit/remove/reset settings
 ### Custom Commands
-#### Add/edit/remove custom commands (groups)
-#### Lock/globalize custom commands
+#### Add/edit/remove/lock custom commands
+#### Set permission of custom commands
 ### Channel Management
 #### Channel mute/unmute/open/close
 #### Channel monitor
