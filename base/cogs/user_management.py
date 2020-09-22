@@ -100,6 +100,37 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     return self.bot.get_setting(guild, "MUTE_DURATION")
 
   @commands.Cog.listener()
+  async def on_member_update(self, before, after):
+    if before.id == self.bot.user.id:
+      return
+    if before.nick != after.nick:
+      title = f"{before.display_name} changed nickname"
+      fields = {
+        "Old nickname:":before.nick,
+        "New nickname:":after.nick
+      }
+      await self.bot.log_audit(before.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
+
+  #@commands.Cog.listener()
+  #async def on_user_update(self, before, after):
+  #  if before.id == self.bot.user.id:
+  #    return
+  #  if before.name != after.name:
+  #    title = f"{before.display_name} changed username"
+  #    fields = {
+  #      "Old nickname:":before.name,
+  #      "New nickname:":after.name
+  #    }
+  #    await self.bot.log_audit(member.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
+  #  if before.discriminator != after.discriminator:
+  #    title = f"{before.display_name} changed discriminator"
+  #    fields = {
+  #      "Old discriminator:":before.discriminator,
+  #      "New discriminator:":after.discriminator
+  #    }
+  #    await self.bot.log_audit(member.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
+
+  @commands.Cog.listener()
   async def on_member_remove(self, member):
     if member.id == self.bot.user.id:
       return
