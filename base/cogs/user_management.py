@@ -626,7 +626,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   @commands.group(
     name="ban",
     brief="Bans user(s)",
-    help="A command that bans one or more users.",
+    description="Will ban all users specified in the `users` parameter.",
+    help="The `users` can be either mentions (using @), names (with 4-digit number), or user ids. If the user is currently not in the server, then you have to use the user id.\nThe `days` parameter is optional and can be between 1 and 7. For example, 7 means all of the users' messages of the past 7 days will be deleted.",
     invoke_without_command=True
   )
   @commands.has_permissions(ban_members=True)
@@ -637,7 +638,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       await context.send(f"Sorry {context.author.mention}, but I could not find the specified user(s).")
       return
     if not(0 <= days <= 7):
-      await context.send(f"Sorry {context.author.mention}, `days` needs to be between 0 and 7. Refer to `?help ban id` for more information.")
+      await context.send(f"Sorry {context.author.mention}, `days` needs to be between 0 and 7. Refer to `?help ban` for more information.")
       return
     for user in users:
       if user.id == self.bot.user.id:
@@ -673,7 +674,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     name="rm",
     brief="Unbans a user",
     help="A command to unban (only) one user from the server. The user should be either the full username or the user id.",
-    usage="<user> [reason]",
+    usage="user [reason]",
     aliases=["remove"]
   )
   @commands.has_permissions(ban_members=True)
@@ -705,9 +706,9 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       for ban in banned_users:
         if ban.user.id == user_id:
           await context.guild.unban(ban.user)
-          await context.send(f"{ban.user} has been unbanned from the server.")
+          await context.send(f"```{ban.user} has been unbanned from the server.```")
           title = f"{ban.user.display_name} was unbanned from server"
-          fields = {"User":f"{ban.user.name}\n{ban.user}",
+          fields = {"User":f"{ban.user}\nID: {ban.user.id}",
                     "Reason":reason}
           await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
           break
