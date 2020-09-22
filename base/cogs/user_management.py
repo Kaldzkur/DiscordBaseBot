@@ -106,29 +106,37 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     if before.nick != after.nick:
       title = f"{before.display_name} changed nickname"
       fields = {
-        "Old nickname:":before.nick,
-        "New nickname:":after.nick
+        "Old nickname":before.nick,
+        "New nickname":after.nick
       }
       await self.bot.log_audit(before.guild, title=title, description=f"{before}\nID: {before.id}", fields=fields)
 
-  #@commands.Cog.listener()
-  #async def on_user_update(self, before, after):
-  #  if before.id == self.bot.user.id:
-  #    return
-  #  if before.name != after.name:
-  #    title = f"{before.display_name} changed username"
-  #    fields = {
-  #      "Old nickname:":before.name,
-  #      "New nickname:":after.name
-  #    }
-  #    await self.bot.log_audit(member.guild, title=title, description=f"{before}\nID: {before.id}", fields=fields)
-  #  if before.discriminator != after.discriminator:
-  #    title = f"{before.display_name} changed discriminator"
-  #    fields = {
-  #      "Old discriminator:":before.discriminator,
-  #      "New discriminator:":after.discriminator
-  #    }
-  #    await self.bot.log_audit(member.guild, title=title, description=f"{before}\nID: {before.id}", fields=fields)
+  @commands.Cog.listener()
+  async def on_user_update(self, before, after):
+    if before.id == self.bot.user.id:
+      return
+    fields = {}
+    change = False
+    if before.name != after.name:
+      fields.update({
+        "Old username":before.name,
+        "New username":after.name
+      })
+      change = True
+    if before.discriminator != after.discriminator:
+      fields.update({
+        "Old discriminator":before.discriminator,
+        "New discriminator":after.discriminator
+      })
+      change = True
+    if change:
+      for guild in self.bot.guilds:       
+        await self.bot.log_audit(
+          guild,
+          title=f"{before.display_name} changed profile",
+          description=f"{before}\n{after}\nID: {before.id}",
+          fields=fields
+        )
 
   @commands.Cog.listener()
   async def on_member_remove(self, member):
