@@ -154,8 +154,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       await channel.send(f"{member} just left the server. :sob:")
     title = f"{member.display_name} just left the server"
     fields = {
-      "Account created on:":member.created_at,
-      "Joined on:":member.joined_at
+      "Account created on":member.created_at,
+      "Joined on":member.joined_at
     }
     await self.bot.log_audit(member.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
     if False:
@@ -175,8 +175,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   async def on_member_join(self, member):
     title = f"{member.display_name} just joined the server"
     fields = {
-      "Account created on:":member.created_at,
-      "Joined on:":member.joined_at
+      "Account created on":member.created_at,
+      "Joined on":member.joined_at
     }
     await self.bot.log_audit(member.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
     try:
