@@ -109,7 +109,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         "Old nickname:":before.nick,
         "New nickname:":after.nick
       }
-      await self.bot.log_audit(before.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
+      await self.bot.log_audit(before.guild, title=title, description=f"{before}\nID: {before.id}", fields=fields)
 
   #@commands.Cog.listener()
   #async def on_user_update(self, before, after):
@@ -121,14 +121,14 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   #      "Old nickname:":before.name,
   #      "New nickname:":after.name
   #    }
-  #    await self.bot.log_audit(member.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
+  #    await self.bot.log_audit(member.guild, title=title, description=f"{before}\nID: {before.id}", fields=fields)
   #  if before.discriminator != after.discriminator:
   #    title = f"{before.display_name} changed discriminator"
   #    fields = {
   #      "Old discriminator:":before.discriminator,
   #      "New discriminator:":after.discriminator
   #    }
-  #    await self.bot.log_audit(member.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
+  #    await self.bot.log_audit(member.guild, title=title, description=f"{before}\nID: {before.id}", fields=fields)
 
   @commands.Cog.listener()
   async def on_member_remove(self, member):
