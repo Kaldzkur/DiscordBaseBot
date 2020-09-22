@@ -191,8 +191,7 @@ def set_new_cmd(guild, parent, child_name, cmd_text, attributes, is_group=False,
 async def add_cmd_from_row(bot, guild, cmd):
   attributes = json_load_dict(cmd["attributes"])
   parent, child, cmd_name = await analyze_new_cmd(bot, guild, cmd["cmdname"])
-  if cmd["glob"]:
-    guild = None
+  guild = None if cmd["glob"] else guild
   return set_new_cmd(guild, parent, child, cmd["message"], attributes, cmd["isgroup"], cmd["perm"])
   
 async def add_cmd_from_attributes(context, cmd_name, cmd_msg, attributes, isgroup):

@@ -37,7 +37,7 @@ class CommandCog(commands.Cog, name="Command Management"):
   @_cmd.command(
     name="add",
     brief="Adds a command",
-    help="Adds a new permanent command to the bot. The command will send the text, when ?name is invoked. String key-value pairs are supported and will be passed to the command, but name attribute will be ignored. You MUST add a new line between the key-value pairs, and MUST NOT add a new line inside the key-value pairs (except cmd_text), the last key MUST be cmd_text which is the text sent by the command.\nIf you need to have arguments, you can input '{}' in your text just like a python string format. For example `?cmd add hello Say hello to {}` will add a command that takes one argument, and invoking `?hello bot` will resulting in a response `Say hello to bot`. If you are not a mod, the mentions in arguments of the custom commands will removed.",
+    help="Adds a new permanent command to the bot. The command will send the text, when '?name' is invoked. String key-value pairs are supported and will be passed to the command, but name attribute will be ignored. You MUST add a new line between the key-value pairs, and MUST NOT add a new line inside the key-value pairs (except cmd_text), the last key MUST be cmd_text which is the text sent by the command.\nIf you need to have arguments, you can input '{}' in your text just like a python string format. For example `?cmd add hello Say hello to {}` will add a command that takes one argument, and invoking `?hello bot` will resulting in a response `Say hello to bot`. If you are not a mod, the mentions in response will removed.",
     usage="<cmd_name> [attribute=value]... [cmd_text=value]"
   )
   @can_edit_commands()
@@ -72,16 +72,13 @@ class CommandCog(commands.Cog, name="Command Management"):
   async def _rename_cmd(self, context, cmd_name:cmd_name_converter, new_name:cmd_name_converter):
     parent, child, cmd = await analyze_existing_cmd(self.bot, context.guild, cmd_name, context)
     cmd_name = cmd["cmdname"]
-    new_parent, new_child, new_name = await analyze_new_cmd(self.bot, context.guild, new_name)
     if cmd["lock"]:
       raise LookupError(f"Custom command '{cmd_name}' is locked and canot be edited.")
     attributes = json_load_dict(cmd["attributes"])
+    guild = None if cmd["glob"] else context.guild
     old_cmd = parent.remove_command(child)
-    if cmd["glob"]:
-      guild = None
-    else:
-      guild = context.guild
     try:
+      new_parent, new_child, new_name = await analyze_new_cmd(self.bot, context.guild, new_name)
       new_cmd = set_new_cmd(guild, new_parent, new_child, cmd["message"], attributes, cmd["isgroup"], cmd["perm"])
     except Exception as e:
       parent.add_command(old_cmd)
@@ -111,10 +108,7 @@ class CommandCog(commands.Cog, name="Command Management"):
       cmd_text = cmd["message"]
     attributes = json_load_dict(cmd["attributes"])
     attributes.update(attributes_new)
-    if cmd["glob"]:
-      guild = None
-    else:
-      guild = context.guild
+    guild = None if cmd["glob"] else context.guild
     set_new_cmd(guild, parent, child, cmd_text, attributes, cmd["isgroup"], cmd["perm"])
     await self.after_cmd_update(context, cmd_name, cmd_text, attributes, cmd["isgroup"], "Updated Command", cmd["glob"], cmd["perm"])
 
@@ -150,10 +144,7 @@ class CommandCog(commands.Cog, name="Command Management"):
     if "aliases" not in attributes:
       attributes["aliases"] = []
     attributes["aliases"].extend(aliases)
-    if cmd["glob"]:
-      guild = None
-    else:
-      guild = context.guild
+    guild = None if cmd["glob"] else context.guild
     set_new_cmd(guild, parent, child, cmd["message"], attributes, cmd["isgroup"], cmd["perm"])
     await self.after_cmd_update(context, cmd_name, cmd["message"], attributes, cmd["isgroup"], "Added Aliases", cmd["glob"], cmd["perm"])
       
@@ -165,6 +156,9 @@ class CommandCog(commands.Cog, name="Command Management"):
   async def _lock_cmd(self, context, cmd_name:cmd_name_converter):
     parent, child, cmd = await analyze_existing_cmd(self.bot, context.guild, cmd_name, context)
     cmd_name = cmd["cmdname"]
+    if cmd["lock"]:
+      await context.send(f"Command '{cmd_name}' is already locked.")
+      return
     self.bot.db[context.guild.id].query(f"UPDATE user_commands SET lock=1 WHERE cmdname='{cmd_name}'")
     await context.send(f"Command '{cmd_name}' has been locked.")
     title = f"User Locked a Command"
@@ -180,6 +174,9 @@ class CommandCog(commands.Cog, name="Command Management"):
   async def _unlock_cmd(self, context, cmd_name:cmd_name_converter):
     parent, child, cmd = await analyze_existing_cmd(self.bot, context.guild, cmd_name, context)
     cmd_name = cmd["cmdname"]
+    if not cmd["lock"]:
+      await context.send(f"Command '{cmd_name}' is not locked.")
+      return
     self.bot.db[context.guild.id].query(f"UPDATE user_commands SET lock=0 WHERE cmdname='{cmd_name}'")
     await context.send(f"Command '{cmd_name}' has been unlocked.")
     title = f"User Unlocked a Command"
@@ -231,8 +228,8 @@ class CommandCog(commands.Cog, name="Command Management"):
     
   @_cmd.command(
     name="perm",
-    brief="Set command permission",
-    help="Set the permission of a command. 0 is accessible to all members. 1 - accessible to mods; 2 - accessible to admins; 3 - accessible to bot owners"
+    brief="Sets command permission",
+    help="Set the permission of a command.\n0 - accessible to all\n1 - accessible to mods\n2 - accessible to admins\n3 - accessible to bot owners"
   )
   @commands.is_owner()
   async def _perm_cmd(self, context, cmd_name:cmd_name_converter, permission:int=None):
@@ -240,14 +237,15 @@ class CommandCog(commands.Cog, name="Command Management"):
       await context.send_help("cmd perm")
       return
     if permission < 0 or permission > 3:
-      await context.send("Permission can only be 0, 1, 2, 3.")
+      await context.send("Permission can only be\n0 - accessible to all\n1 - accessible to mods\n2 - accessible to admins\n3 - accessible to bot owners.")
       return
     parent, child, cmd = await analyze_existing_cmd(self.bot, context.guild, cmd_name, context)
     cmd_name = cmd["cmdname"]
     if permission == cmd["perm"]:
       await context.send(f"Permission does not change for command {cmd_name}.")
       return
-    set_new_cmd(context.guild, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], permission)
+    guild = None if cmd["glob"] else context.guild
+    set_new_cmd(guild, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], permission)
     self.bot.db[context.guild.id].query(f"UPDATE user_commands SET perm={permission} WHERE cmdname='{cmd_name}'")
     await context.send(f"Updated command '{cmd_name}' permission.")
     title = f"User Update a Command Permission"
