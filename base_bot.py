@@ -55,41 +55,40 @@ class BaseBot(commands.Bot):
   async def log_error(self, guild, *, title, description=None, timestamp=None, fields:dict=None):
     if not self.get_setting(guild, "ERROR_LOG") == "ON":
       return
-    if timestamp is None:
-      timestamp = datetime.utcnow()
-    embed = discord.Embed(title=title, description=description, colour=discord.Colour.red(), timestamp=timestamp)
-    if fields is not None:
-      for key, value in fields.items():
-        if key and value:
-          embed.add_field(name=f"{key}:", value=f"{value}", inline=False)
+    embed = self._create_embed(title, description, discord.Colour.red(), timestamp, fields)
     embed.set_footer(text="ERROR LOG")
     await self.get_log(guild, "error-log").send(embed=embed)
     
   async def log_mod(self, guild, *, title, description=None, timestamp=None, fields:dict=None):
     if not self.get_setting(guild, "MOD_LOG") == "ON":
       return
-    if timestamp is None:
-      timestamp = datetime.utcnow()
-    embed = discord.Embed(title=title, description=description, colour=discord.Colour.green(), timestamp=timestamp)
-    if fields is not None:
-      for key, value in fields.items():
-        if key and value:
-          embed.add_field(name=f"{key}:", value=f"{value}", inline=False)
+    embed = self._create_embed(title, description, discord.Colour.green(), timestamp, fields)
     embed.set_footer(text="MOD LOG")
     await self.get_log(guild, "mod-log").send(embed=embed)
-    
+
   async def log_admin(self, guild, *, title, description=None, timestamp=None, fields:dict=None):
     if not self.get_setting(guild, "ADMIN_LOG") == "ON":
       return
+    embed = self._create_embed(title, description, discord.Colour.blue(), timestamp, fields)
+    embed.set_footer(text="ADMIN LOG")
+    await self.get_log(guild, "admin-log").send(embed=embed)
+
+  async def log_audit(self, guild, *, title, description=None, timestamp=None, fields:dict=None):
+    if not self.get_setting(guild, "AUDIT_LOG") == "ON":
+      return
+    embed = self._create_embed(title, description, discord.Colour.gold(), timestamp, fields)
+    embed.set_footer(text="AUDIT LOG")
+    await self.get_log(guild, "audit-log").send(embed=embed)
+
+  def _create_embed(self, title, description=None, colour=discord.Colour.from_rgb(54,57,63), timestamp=None, fields:dict=None):
     if timestamp is None:
       timestamp = datetime.utcnow()
-    embed = discord.Embed(title=title, description=description, colour=discord.Colour.blue(), timestamp=timestamp)
+    embed = discord.Embed(title=title, description=description, colour=colour, timestamp=timestamp)
     if fields is not None:
       for key, value in fields.items():
         if key and value:
           embed.add_field(name=f"{key}:", value=f"{value}", inline=False)
-    embed.set_footer(text="ADMIN LOG")
-    await self.get_log(guild, "admin-log").send(embed=embed)
+    return embed
 
   def get_setting(self, guild, setting_name):
     try:
@@ -336,6 +335,18 @@ class BaseBot(commands.Bot):
       )
     else:
        await mod_log.edit(overwrites=permissions)
+    audit_log = discord.utils.get(guild.text_channels, name="audit-log", category_id=bot_category.id)
+    if audit_log is None:
+      await guild.create_text_channel(
+        "audit-log",
+        topic="A log for certain events with user information.",
+        category=bot_category,
+        position=4,
+        overwrites=permissions,
+        reason="A channel to log all specific events"
+      )
+    else:
+       await audit_log.edit(overwrites=permissions)
 
   async def create_roles(self, guild):
     bot_role = self.get_bot_role(guild)
@@ -640,9 +651,11 @@ class BaseBot(commands.Bot):
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
     self.default_settings["ERROR_LOG"] = DefaultSetting(name="ERROR_LOG", default="ON", description="on/off error logging", 
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
-    self.default_settings["ADMIN_LOG"] = DefaultSetting(name="ADMIN_LOG", default="ON", description="on/off admin logging", 
+    self.default_settings["ADMIN_LOG"] = DefaultSetting(name="ADMIN_LOG", default="ON", description="on/off admin logging",
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
     self.default_settings["MOD_LOG"] = DefaultSetting(name="MOD_LOG", default="ON", description="on/off mod logging", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
+    self.default_settings["AUDIT_LOG"] = DefaultSetting(name="AUDIT_LOG", default="ON", description="on/off audit logging", 
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
     self.default_settings["ACTIVE_TIME"] = DefaultSetting(name="ACTIVE_TIME", default=2, description="interactive message active time", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
