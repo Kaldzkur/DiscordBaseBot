@@ -113,6 +113,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       channel = discord.utils.get(member.guild.text_channels, name="general-chat")
     if channel is not None:
       await channel.send(f"{member} just left the server. :sob:")
+    title = f"{member.display_name} just left the server"
+    fields = {
+      "Account created on:":member.created_at,
+      "Joined on:":member.joined_at
+    }
+    await self.bot.log_audit(member.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
     if False:
       try:
         await member.create_dm()
@@ -128,35 +134,47 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
 
   @commands.Cog.listener()
   async def on_member_join(self, member):
-    await member.create_dm()
-    await member.dm_channel.send(
-      f"Hi __{member.name}__, welcome to the {member.guild.name} discord server!"
-      f"Please read the following sections:\n\n"
-      f"__***Rules***__\n"
-      f"Be *polite*, *respectful*, and avoid political discussions.  "
-      f"You heard us -- *civil* and *friendly*.\n\n"
-      f"This discord is a place to kick back, have a mug of Elixir, and chat about the good ol’ days of tossin’ meteors. "
-      f"You know, typical stuff.\n\n"
-      f"All text should be in English, please. "
-      f"If you feel there is a need for a language specific channel, please PM one of the mods and we will arrange one.\n\n"
-      f"Questions are always welcome. The developers are around, but let's avoid tagging them too much. "
-      f"We don't want to be a pain in the butt.\n\n"
-      f"Alternatively feel free to talk about other neat stuff (How neat is that?), "
-      f"that you find around the web, worldwide or localwide, we don’t discriminate the regionality of your finds.\n\n"
-      f"__Please respect all of Discord's global rules: https://discordapp.com/guidelines__\n\n"
-    )
-    max_warnings = self.get_max_warnings(member.guild)
-    warn_duration = self.get_warn_duration(member.guild)
-    await member.dm_channel.send(
-      f"__**Warnings**__\n"
-      f"When you receive a warning it will expire after {warn_duration} days. If you receive another warning during that time, "
-      f"it will expire after {2*warn_duration} days from the time you got the last warning. "
-      f"If you get no additional warnings during the expiry time, then all your warnings will be reset."
-      f"If you receive more than {max_warnings} warnings without them expiring first, then you will be removed from the server. "
-      f"If you want to check the current status of your warnings, use the `?warn info` or `?slap info` command.\n\n"
-      f"If you have something to discuss with the mods, then use the `?modmail` command. You can specify the reason for opening the channel using `?modmail your reason`. "
-      f"To dispute any warnings, use the `?modmail` command."
-    )
+    title = f"{member.display_name} just joined the server"
+    fields = {
+      "Account created on:":member.created_at,
+      "Joined on:":member.joined_at
+    }
+    await self.bot.log_audit(member.guild, title=title, description=f"{member}\nID: {member.id}", fields=fields)
+    try:
+      await member.create_dm()
+      await member.dm_channel.send(
+        f"Hi __{member.name}__, welcome to the {member.guild.name} discord server!"
+        f"Please read the following sections:\n\n"
+        f"__***Rules***__\n"
+        f"Be *polite*, *respectful*, and avoid political discussions.  "
+        f"You heard us -- *civil* and *friendly*.\n\n"
+        f"This discord is a place to kick back, have a mug of Elixir, and chat about the good ol’ days of tossin’ meteors. "
+        f"You know, typical stuff.\n\n"
+        f"All text should be in English, please. "
+        f"If you feel there is a need for a language specific channel, please PM one of the mods and we will arrange one.\n\n"
+        f"Questions are always welcome. The developers are around, but let's avoid tagging them too much. "
+        f"We don't want to be a pain in the butt.\n\n"
+        f"Alternatively feel free to talk about other neat stuff (How neat is that?), "
+        f"that you find around the web, worldwide or localwide, we don’t discriminate the regionality of your finds.\n\n"
+        f"__Please respect all of Discord's global rules: https://discordapp.com/guidelines__\n\n"
+      )
+    except: #could not send dm
+      pass
+    try:
+      max_warnings = self.get_max_warnings(member.guild)
+      warn_duration = self.get_warn_duration(member.guild)
+      await member.dm_channel.send(
+        f"__**Warnings**__\n"
+        f"When you receive a warning it will expire after {warn_duration} days. If you receive another warning during that time, "
+        f"it will expire after {2*warn_duration} days from the time you got the last warning. "
+        f"If you get no additional warnings during the expiry time, then all your warnings will be reset."
+        f"If you receive more than {max_warnings} warnings without them expiring first, then you will be removed from the server. "
+        f"If you want to check the current status of your warnings, use the `?warn info` or `?slap info` command.\n\n"
+        f"If you have something to discuss with the mods, then use the `?modmail` command. You can specify the reason for opening the channel using `?modmail your reason`. "
+        f"To dispute any warnings, use the `?modmail` command."
+      )
+    except: #could not send dm
+      pass
 
   @commands.command(
     name="statistic",
