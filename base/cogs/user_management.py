@@ -173,6 +173,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
 
   @commands.Cog.listener()
   async def on_member_join(self, member):
+    if member.id == self.bot.user.id:
+      return
     title = f"{member.display_name} just joined the server"
     fields = {
       "Account created on":member.created_at,
