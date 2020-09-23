@@ -269,6 +269,8 @@ class BaseBot(commands.Bot):
       fields = {"Event":event,
                f"{error.__class__.__name__}":f"{error}"}
       await self.log_error(guild, title=title, fields=fields)
+    else:
+      await super().on_error(event, *args, **kwargs)
 
   def create_tables(self, guild):
     if "user_warnings" not in self.db[guild.id]:
