@@ -593,6 +593,9 @@ class BaseBot(commands.Bot):
       admin_log = self.get_log(guild, "admin-log")
       if not admin_log is None:
         await admin_log.delete()
+      audit_log = self.get_log(guild, "audit-log")
+      if not audit_log is None:
+        await audit_log.delete()
       await bot_category.delete()
     mod_queue = discord.utils.get(guild.categories, name=f"{guild.me.name}s-queue")
     if mod_queue is not None:
