@@ -41,3 +41,9 @@ def can_edit_commands():
       return admin_role in context.author.roles or cmd_role in context.author.roles
   return commands.check(predicate)
 
+def check_channel_permissions(channel, author, permissions):
+  user_permissions = channel.permissions_for(author)
+  for permission in permissions:
+    if not getattr(user_permissions, permission, False):
+      raise commands.MissingPermissions(permissions)
+  return True

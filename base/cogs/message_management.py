@@ -4,7 +4,7 @@ import json
 import os
 import typing
 from discord.ext import commands
-from base.modules.access_checks import has_mod_role
+from base.modules.access_checks import has_mod_role, check_channel_permissions
 from datetime import datetime, timezone
 from base.modules.serializable_object import MessageCache, MessageSchedule, CommandSchedule
 from base.modules.basic_converter import FutureTimeConverter, PastTimeConverter, EmojiUnion
@@ -55,9 +55,9 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       # This prevents any commands with local handlers being handled here.
       return
     if isinstance(error, commands.BotMissingPermissions):
-      await context.send(f"Sorry {context.author.mention}, but I do not have permission to manage messages!")
+      await context.send(f"Sorry {context.author.mention}, but I do not have permission to manage messages in the specific channel!")
     elif isinstance(error, commands.CheckFailure):
-      await context.send(f"Sorry {context.author.mention}, but you do not have permission to manage messages!")
+      await context.send(f"Sorry {context.author.mention}, but you do not have permission to manage messages in the specific channel!")
     elif isinstance(error, commands.UserInputError):
       await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `?{context.command.qualified_name}`.")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, discord.Forbidden):
@@ -74,6 +74,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     case_insensitive = True,
     invoke_without_command=True
   )
+  @commands.has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
   @commands.bot_has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
   @has_mod_role()
   async def _delete(self, context, members:commands.Greedy[discord.Member], channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1, skip_num:typing.Optional[int]=0):
@@ -81,6 +82,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       raise commands.UserInputError("num must be a positive number.")
     if channel is None:
       channel = context.channel
+    elif channel != context.channel:
+      check_channel_permissions(channel, context.author, ["read_messages", "read_message_history", "manage_messages"])
     max_cache = self.get_max_cache(context.guild)
     msg_list = []
     msg_count = 0
@@ -134,6 +137,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     usage="[@mentions]... [#channels]... [number=1] [skip_num=0]",
     help="A command to restore n deleted messages from user(s) in channel(s) with skipping m messages. It restores message(s) to the current channel. If member/channel is not specified it will search through all messages in cache.",
   )
+  @commands.has_permissions(read_messages=True, send_messages=True, manage_messages=True)
   @commands.bot_has_permissions(read_messages=True, send_messages=True, manage_messages=True)
   @has_mod_role()
   async def _restore(self, context, members:commands.Greedy[discord.Member], channels:commands.Greedy[discord.TextChannel], num:typing.Optional[int]=1, skip_num:typing.Optional[int]=0):
@@ -223,6 +227,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   async def _announce(self, context, channel:typing.Optional[discord.TextChannel], *, announcement=None):
     if channel is None:
       channel = context.channel
+    elif channel != context.channel:
+      check_channel_permissions(channel, context.author, ["read_messages", "send_messages", "mention_everyone", "manage_messages"])
     (embed_post, files) = await get_message_attachments(context.message)
     if announcement is None and embed_post is None and len(files) == 0:
       await context.send_help("announce")
@@ -243,11 +249,14 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     help="This command moves n messages (from the past 100 messages of the channel) from user(s) with skipping m messages into a channel. It will move the message from the @mention to #channel. If no number is specified, it will move the last message. If no member is specified, it will search any messages.",
     usage="[@mentions]... <#channel> [number=1] [skip_num=0]",
   )
+  @commands.has_permissions(read_messages=True, send_messages=True, read_message_history=True, manage_messages=True)
   @commands.bot_has_permissions(read_messages=True, send_messages=True, read_message_history=True, manage_messages=True)
   @has_mod_role()
   async def _move_post(self, context, members:commands.Greedy[discord.Member], channel:discord.TextChannel, num:typing.Optional[int]=1, skip_num:typing.Optional[int]=0):
     if num <= 0:
       raise commands.UserInputError("num must be a positive number.")
+    if channel != context.channel:
+      check_channel_permissions(channel, context.author, ["read_messages", "read_message_history", "send_messages", "manage_messages"])
     queue = []
     msg_count = 0
     async for message in context.message.channel.history():
@@ -295,6 +304,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     case_insensitive = True,
     invoke_without_command=True
   )
+  @commands.has_permissions(read_messages=True, send_messages=True, read_message_history=True, manage_messages=True)
+  @commands.bot_has_permissions(read_messages=True, send_messages=True, read_message_history=True)
   @has_mod_role()
   async def _edit(self, context, channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1, *, text=None):
     if text is None:
@@ -307,7 +318,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     brief="Edits by adding a line",
     usage="[#channel] [number=1] <text>"
   )
-  @commands.bot_has_permissions(read_messages=True, send_messages=True, read_message_history=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, send_messages=True, read_message_history=True, manage_messages=True)
+  @commands.bot_has_permissions(read_messages=True, send_messages=True, read_message_history=True)
   @has_mod_role()
   async def _edit_add(self, context, channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1, *, text=None):
     if text is None:
@@ -320,7 +332,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     brief="Edits by replacing the last line",
     usage="[#channel] [number=1] <text>",
   )
-  @commands.bot_has_permissions(read_messages=True, send_messages=True, read_message_history=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, send_messages=True, read_message_history=True, manage_messages=True)
+  @commands.bot_has_permissions(read_messages=True, send_messages=True, read_message_history=True)
   @has_mod_role()
   async def _edit_replace(self, context, channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1, *, text=None):
     if text is None:
@@ -334,7 +347,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     usage="[#channel] [number=1]",
     aliases=["rm"]
   )
-  @commands.bot_has_permissions(read_messages=True, send_messages=True, read_message_history=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, send_messages=True, read_message_history=True, manage_messages=True)
+  @commands.bot_has_permissions(read_messages=True, send_messages=True, read_message_history=True)
   @has_mod_role()
   async def _edit_remove(self, context, channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1):
     await self.general_edit(context, channel, None, lambda x,y: x.rsplit(sep="\n", maxsplit=1)[0], num)
@@ -345,6 +359,10 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       raise commands.UserInputError("num must be a positive number.")
     if channel is None:
       channel = context.channel
+    elif channel != context.channel:
+      perm = channel.permissions_for(context.author)
+      if not perm.read_messages or not perm.read_message_history or not perm.send_messages or not perm.manage_messages:
+        raise commands.MissingPermissions(["read_messages", "read_message_history", "send_messages", "manage_messages"])
     msg_count = 0
     async for message in channel.history():
       if message.author.id == self.bot.user.id:
@@ -376,12 +394,14 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     usage="[@mention] [#channel] [number=1] <emojis>...",
     help="This command makes a reaction to the n-th last message from a user in a channel, if member is not specified it will search the n-th last message, if channel is not specified it will search the current channel.",
   )
-  @commands.has_permissions(read_messages=True, add_reactions=True)
-  @commands.bot_has_permissions(read_messages=True, add_reactions=True)
+  @commands.has_permissions(read_messages=True, add_reactions=True, read_message_history=True)
+  @commands.bot_has_permissions(read_messages=True, add_reactions=True, read_message_history=True)
   @has_mod_role()
   async def _react(self, context, member:typing.Optional[discord.Member], channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1, emojis:commands.Greedy[EmojiUnion]=None):
     if channel is None:
       channel = context.channel
+    elif channel != context.channel:
+      check_channel_permissions(channel, context.author, ["read_messages", "add_reactions", "read_message_history"])
     if num <= 0:
       raise commands.UserInputError("num must be a positive number.")
     if emojis == None or len(emojis) == 0:
@@ -421,8 +441,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     case_insensitive = True,
     invoke_without_command=True
   )
-  @commands.has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
-  @commands.bot_has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, send_messages=True)
+  @commands.bot_has_permissions(read_messages=True, send_messages=True, manage_messages=True)
   @has_mod_role()
   async def _schedule(self, context, channel:typing.Optional[discord.TextChannel], schedule:FutureTimeConverter, *, text=None):
     if schedule <= datetime.now(timezone.utc):
@@ -430,6 +450,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       return
     if channel is None:
       channel = context.channel
+    elif channel != context.channel:
+      check_channel_permissions(channel, context.author, ["read_messages", "send_messages"])
     message_schedule = await MessageSchedule.from_message(context.message, channel, schedule, text)
     self.scheduler[context.guild.id].append(message_schedule)
     message_schedule.set_timer(context.guild, self.bot, self.scheduler[context.guild.id])
@@ -449,8 +471,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     brief="Shows a list of scheduled messages",
     help="A command to show a list of scheduled messages.",
   )
-  @commands.has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
-  @commands.bot_has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, send_messages=True, manage_messages=True)
+  @commands.bot_has_permissions(read_messages=True, send_messages=True, manage_messages=True)
   @has_mod_role()
   async def _list_schedule(self, context):
     if len(self.scheduler[context.guild.id]) == 0:
@@ -486,8 +508,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     usage="[@mention] [#channel] [number=1]",
     help="A command to cancel the n-th last scheduled message from a member to be sent in a channel.",
   )
-  @commands.has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
-  @commands.bot_has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, send_messages=True, manage_messages=True)
+  @commands.bot_has_permissions(read_messages=True, send_messages=True, manage_messages=True)
   @has_mod_role()
   async def _cancel_schedule(self, context, member:typing.Optional[discord.Member], channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1):
     if num <= 0:
@@ -532,8 +554,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     aliases=["now", "send"],
     help="A command to immediately send the n-th last scheduled message from a member to be sent in a channel.",
   )
-  @commands.has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
-  @commands.bot_has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, send_messages=True, manage_messages=True)
+  @commands.bot_has_permissions(read_messages=True, send_messages=True, manage_messages=True)
   @has_mod_role()
   async def _sendnow_schedule(self, context, member:typing.Optional[discord.Member], channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1):
     if num <= 0:
@@ -565,8 +587,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     aliases=["command"],
     help="A command to schedule a command in the current channel. Your command text should have the same format as the ordinary command with arguments. This command checks the argument of your command by parsing it into a context but there is no guarantee that the command is error-free. If a command needs to read \"context.messgae.content\" then it may not work as expected. And notice that if your command message is deleted before the scheduled time the command may not work.",
   )
-  @commands.has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
-  @commands.bot_has_permissions(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, send_messages=True)
+  @commands.bot_has_permissions(read_messages=True, send_messages=True, manage_messages=True)
   @has_mod_role()
   async def _cmd_schedule(self, context, schedule:FutureTimeConverter, *, cmd):
     if schedule <= datetime.now(timezone.utc):
@@ -631,6 +653,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       raise commands.UserInputError("num must be a positive number.")
     if channel is None:
       channel = context.channel
+    elif channel != context.channel:
+      check_channel_permissions(channel, context.author, ["read_messages", "read_message_history", "manage_messages"])
     saved = 0
     msg_count = 0
     async for message in channel.history():
@@ -679,7 +703,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     help="Deletes a message in db given its id.",
     aliases=["del"]
   )
-  @commands.has_permissions(read_messages=True, read_message_history=True, send_messages=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
   @commands.bot_has_permissions(read_messages=True, read_message_history=True, send_messages=True, manage_messages=True)
   @has_mod_role()
   async def _delete_msg(self, context, messageID:int):
@@ -741,7 +765,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     help="Deletes all messages in db matching the channel and author criterions before a date. Time has to be in \"%d%h%m%s\" format (treated as a past time) or a formatted absolute time.",
     usage="[@mentions]... [#channels]... [timeBefore]"
   )
-  @commands.has_permissions(read_messages=True, read_message_history=True, send_messages=True, manage_messages=True)
+  @commands.has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
   @commands.bot_has_permissions(read_messages=True, read_message_history=True, send_messages=True, manage_messages=True)
   @has_mod_role()
   async def _purge_msg(self, context, members:commands.Greedy[discord.Member], channels:commands.Greedy[discord.TextChannel], 
