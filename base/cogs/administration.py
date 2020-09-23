@@ -113,7 +113,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @commands.is_owner()
   async def _upgrade(self, context):
     await context.send(f"> Starting upgrade of codebase...")
-    title = "User upgrade bot"
+    title = "User upgraded bot"
     fields = {"User":f"{context.author.mention}\n{context.author}"}
     await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
     await self.bot.close()
@@ -126,7 +126,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @commands.max_concurrency(1)
   @commands.is_owner()
   async def _reboot(self, context):
-    await context.send(f"> Rebooting...")
+    await context.send(fed"> Rebooting...")
     title = "User reboot bot"
     fields = {"User":f"{context.author.mention}\n{context.author}"}
     await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
@@ -141,7 +141,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @commands.is_owner()
   async def _shutdown(self, context):
     await context.send(f"> Signing off...")
-    title = "User shutdown bot"
+    title = "User shut down bot"
     fields = {"User":f"{context.author.mention}\n{context.author}"}
     await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
     await self.bot.close()
