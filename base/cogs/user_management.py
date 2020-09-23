@@ -22,7 +22,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     try:
       await self.bot.set_random_status()
     except Exception as error:
-      for guild in self.bot.guilds:
+      guild = self.bot.main_server
+      if guild:
         await self.bot.on_task_error("Set random activity", error, guild)
     now = time.time()
     for guild in self.bot.guilds:
@@ -68,6 +69,11 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
           await self.bot.log_mod(guild, title="Updated user statistics")
         except Exception as error:
           await self.bot.on_task_error("Update user statistics", error, guild)
+  @update_slapcount.error
+  async def update_slapcound_error(self, error):
+    guild = self.bot.main_server
+    if guild:
+      await self.bot.on_task_error("User management loop", error, guild)
 
   @update_slapcount.before_loop
   async def before_update_slapcount(self):

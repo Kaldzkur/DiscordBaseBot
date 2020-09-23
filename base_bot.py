@@ -3,6 +3,7 @@ import traceback
 import time
 import json
 import re
+import sys
 from datetime import datetime
 
 import discord
@@ -236,6 +237,38 @@ class BaseBot(commands.Bot):
     fields = {"Task":task,
              f"{error.__class__.__name__}":f"{error}"}
     await self.log_error(guild, title=title, fields=fields)
+    
+  async def on_error(self, event, *args, **kwargs):
+    error = sys.exc_info()[1]
+    if len(args) > 0:
+      if isinstance(args[0], list):
+        first_arg = args[0][0]
+      else:
+        first_arg = args[0]
+      if isinstance(first_arg, discord.Guild):
+        guild = first_arg
+      else:
+        if isinstance(first_arg, discord.Reaction):
+          first_arg = first_arg.message.channel
+        elif isinstance(first_arg, discord.Message):
+          first_arg = first_arg.channel
+        if hasattr(first_arg, "guild"):
+          guild = first_arg.guild
+        elif hasattr(fist_arg, "guild_id"):
+          guild = self.get_guild(fist_arg.guild_id)
+        else:
+          guild = None
+    else:
+      guild = None
+    if guild is None:
+      guild = self.main_server
+    if guild is not None:
+      title = f"A {error.__class__.__name__} occured"
+      if hasattr(error, "original"):
+        error = error.original
+      fields = {"Event":event,
+               f"{error.__class__.__name__}":f"{error}"}
+      await self.log_error(guild, title=title, fields=fields)
 
   def create_tables(self, guild):
     if "user_warnings" not in self.db[guild.id]:
@@ -689,6 +722,15 @@ class BaseBot(commands.Bot):
     for k,db in self.db.items():
       db.close()
     print("The bot client is completely closed")
+    
+  def set_main_server(self, id):
+    self.main_server_id = id
+    
+  @property
+  def main_server(self):
+    if not hasattr(self, "main_server_id"):
+      return None
+    return self.get_guild(self.main_server_id)
 
 if __name__ == "__main__":
   import os
@@ -699,6 +741,7 @@ if __name__ == "__main__":
   TOKEN = os.getenv("DISCORD_TOKEN")
   APPA = int(os.getenv("APPA_ID"))
   SIN = int(os.getenv("SIN_ID"))
+  SERVER = int(os.getenv("SERVER_ID"))
   cog_categories = {
     "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
     "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands"],
@@ -717,4 +760,5 @@ if __name__ == "__main__":
     case_insensitive = True,
     help_command = InteractiveHelpCommand(cog_categories)
   )
+  bot.set_main_server(SERVER)
   bot.run(TOKEN)
