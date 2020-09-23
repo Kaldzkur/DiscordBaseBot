@@ -126,8 +126,8 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @commands.max_concurrency(1)
   @commands.is_owner()
   async def _reboot(self, context):
-    await context.send(fed"> Rebooting...")
-    title = "User reboot bot"
+    await context.send(f"> Rebooting...")
+    title = "User rebooted bot"
     fields = {"User":f"{context.author.mention}\n{context.author}"}
     await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
     await self.bot.close()

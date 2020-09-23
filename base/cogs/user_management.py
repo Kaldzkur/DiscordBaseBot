@@ -116,15 +116,16 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         "New nickname":after.nick
       }
       await self.bot.log_audit(before.guild, title=title, description=f"{before}\nID: {before.id}", fields=fields)
-    roles_before = set(before.roles)
-    roles_after = set(after.roles)
-    if roles_before != roles_after:
-      title = f"{before.display_name} updated roles"
-      fields = {
-        "New role":", ".join(role.name for role in (roles_after-roles_before)),
-        "Removed role":", ".join(role.name for role in (roles_before-roles_after))
-      }
-      await self.bot.log_audit(before.guild, title=title, description=f"{before}\nID: {before.id}", fields=fields)
+    if False:
+      roles_before = set(before.roles)
+      roles_after = set(after.roles)
+      if roles_before != roles_after:
+        title = f"{before.display_name} updated roles"
+        fields = {
+          "New role":", ".join(role.name for role in (roles_after-roles_before)),
+          "Removed role":", ".join(role.name for role in (roles_before-roles_after))
+        }
+        await self.bot.log_audit(before.guild, title=title, description=f"{before}\nID: {before.id}", fields=fields)
 
   @commands.Cog.listener()
   async def on_user_update(self, before, after):
