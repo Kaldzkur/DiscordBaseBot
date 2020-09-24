@@ -465,12 +465,20 @@ class BaseBot(commands.Bot):
       )
       #Restrict access to channels
       for channel in guild.channels:
+        everyone_permissions = channel.overwrites_for(guild.default_role)
+        if everyone_permissions is None or everyone_permissions.pair[1].view_channel is True:   #Deny-Pair
+          #Skip private channels, we do not want Muted people to suddenly have access to the channel
+          continue
         try:
           await channel.set_permissions(mute_role, overwrite=mute_channel_permissions)
         except:
           pass
 
   async def on_guild_channel_create(self, channel):
+    everyone_permissions = channel.overwrites_for(channel.guild.default_role)
+    if everyone_permissions is None or everyone_permissions.pair[1].view_channel is True:
+      #Skip private channels, we do not want Muted people to suddenly have access to the channel
+      return
     mute_permissions = discord.PermissionOverwrite(
       create_instant_invite=False, manage_channels=False, manage_roles=False, manage_webhooks=False, view_channel=True,
       send_messages=False, send_tts_messages=False, manage_messages=False, embed_links=False, 
