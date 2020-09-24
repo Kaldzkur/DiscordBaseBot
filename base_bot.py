@@ -476,7 +476,7 @@ class BaseBot(commands.Bot):
 
   async def on_guild_channel_create(self, channel):
     everyone_permissions = channel.overwrites_for(channel.guild.default_role)
-    if everyone_permissions is None or everyone_permissions.pair[1].view_channel is True:
+    if everyone_permissions is None or everyone_permissions.pair()[1].view_channel is True:
       #Skip private channels, we do not want Muted people to suddenly have access to the channel
       return
     mute_permissions = discord.PermissionOverwrite(
