@@ -3,8 +3,9 @@ from discord.ext import commands
 from pytz import timezone
 import operator
 import json
+import random
 from base.modules.access_checks import has_admin_role, has_mod_role
-from base.modules.basic_converter import smart_clean_content
+from base.modules.basic_converter import smart_clean_content, option_converter
 
 def json_load_dict(string):
   if string:
@@ -93,9 +94,11 @@ def make_user_command(guild, cmd_name, cmd_text, permission=0, **attributes):
   )
   @server_check_fun(guild)
   @permission_check_fun(permission)
-  async def _wrapper_user_cmd(context, *args):
+  async def _wrapper_user_cmd(context, options:commands.Greedy[option_converter], *args):
     msg = cmd_text.format(*args, context=context)
     await context.send(await smart_clean_content().convert(context, msg))
+    if "d" in options and context.message.channel.permissions_for(context.guild.me).manage_messages:
+      await context.message.delete()
   @_wrapper_user_cmd.error
   async def _wrapper_user_cmd_error(context, error):
     if isinstance(error, commands.CheckFailure):
@@ -115,12 +118,22 @@ def make_user_group(guild, cmd_name, cmd_text, permission=0, **attributes):
   )
   @server_check_fun(guild)
   @permission_check_fun(permission)
-  async def _wrapper_user_cmd(context, *args):
+  async def _wrapper_user_cmd(context, options:commands.Greedy[option_converter], *args):
+    if "r" in options:
+      filtered_subcommands = [command for command in context.command.commands if await command.can_run(context)]
+      if len(filtered_subcommands) == 0:
+        await context.send("No subcommand from this command group can be invoked")
+        return
+      context.command = random.choice(filtered_subcommands)
+      await context.invoke(context.command, options, *args)
+      return
     if cmd_text:
-      msg = cmd_text.format(*args, context=context)
-      await context.send(await smart_clean_content().convert(context, msg))
+        msg = cmd_text.format(*args, context=context)
+        await context.send(await smart_clean_content().convert(context, msg))
     else:
       await context.send_help(context.command)
+    if "d" in options and context.message.channel.permissions_for(context.guild.me).manage_messages:
+      await context.message.delete()
   @_wrapper_user_cmd.error
   async def _wrapper_user_cmd_error(context, error):
     if isinstance(error, commands.CheckFailure):

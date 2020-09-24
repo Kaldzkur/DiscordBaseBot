@@ -133,3 +133,10 @@ class smart_clean_content(commands.clean_content):
       return arg
     else:
       return await super().convert(context, arg)
+      
+      
+def option_converter(argument):
+  if len(argument) == 2 and argument.startswith("-") and argument[1:].isalpha():
+    return argument[1:]
+  else:
+    raise commands.UserInputError(f"Could not convert '{arg}' to an option.")
