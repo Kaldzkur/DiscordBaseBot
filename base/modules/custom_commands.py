@@ -122,7 +122,7 @@ def make_user_group(guild, cmd_name, cmd_text, permission=0, **attributes):
     if "r" in options:
       filtered_subcommands = [command for command in context.command.commands if await command.can_run(context)]
       if len(filtered_subcommands) == 0:
-        await context.send("No subcommand from this command group can be invoked")
+        await context.send(f"No subcommands from command group '{context.command.qualified_name}' can be invoked")
         return
       context.command = random.choice(filtered_subcommands)
       await context.invoke(context.command, options, *args)

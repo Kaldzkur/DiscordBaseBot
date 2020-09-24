@@ -111,6 +111,8 @@ class InteractiveMessage(ABC):
   async def start(self, msg=None): # start the message, send the embed, and loop for waiting a reaction
     await self.respond_message(msg)
     while True:
+      if len(self.accept_emojis) == 0:
+        break
       try:
         self = await self.wait_for_reaction()
       except asyncio.TimeoutError:
