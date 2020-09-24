@@ -466,7 +466,7 @@ class BaseBot(commands.Bot):
       #Restrict access to channels
       for channel in guild.channels:
         everyone_permissions = channel.overwrites_for(guild.default_role)
-        if everyone_permissions is None or everyone_permissions.pair[1].view_channel is True:   #Deny-Pair
+        if everyone_permissions is None or everyone_permissions.pair()[1].view_channel is True:   #Deny-Pair
           #Skip private channels, we do not want Muted people to suddenly have access to the channel
           continue
         try:
