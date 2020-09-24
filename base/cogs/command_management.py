@@ -87,8 +87,8 @@ class CommandCog(commands.Cog, name="Command Management"):
     if isinstance(old_cmd, commands.Group) and isinstance(new_cmd, commands.Group):
       for command in old_cmd.commands: # move the commands from the old one to the new one
         new_cmd.add_command(command)
-        self.bot.db[context.guild.id].query(f"UPDATE user_commands SET cmdname='{new_name} {command.name}' WHERE cmdname='{cmd_name} {command.name}'")
-    self.bot.db[context.guild.id].query(f"UPDATE user_commands SET cmdname='{new_name}' WHERE cmdname='{cmd_name}' ")
+        self.bot.db[context.guild.id].query(f'UPDATE user_commands SET cmdname="{new_name} {command.name}" WHERE cmdname="{cmd_name} {command.name}"')
+    self.bot.db[context.guild.id].query(f'UPDATE user_commands SET cmdname="{new_name}" WHERE cmdname="{cmd_name}"')
     await self.log_cmd_update(context, new_name, cmd["message"], attributes, cmd["isgroup"], "Renamed Command")
 
   @_cmd.command(
@@ -159,7 +159,7 @@ class CommandCog(commands.Cog, name="Command Management"):
     if cmd["lock"]:
       await context.send(f"Command '{cmd_name}' is already locked.")
       return
-    self.bot.db[context.guild.id].query(f"UPDATE user_commands SET lock=1 WHERE cmdname='{cmd_name}'")
+    self.bot.db[context.guild.id].query(f'UPDATE user_commands SET lock=1 WHERE cmdname="{cmd_name}"')
     await context.send(f"Command '{cmd_name}' has been locked.")
     title = f"User Locked a Command"
     fields = {"User":f"{context.author.mention}\n{context.author}",
@@ -177,7 +177,7 @@ class CommandCog(commands.Cog, name="Command Management"):
     if not cmd["lock"]:
       await context.send(f"Command '{cmd_name}' is not locked.")
       return
-    self.bot.db[context.guild.id].query(f"UPDATE user_commands SET lock=0 WHERE cmdname='{cmd_name}'")
+    self.bot.db[context.guild.id].query(f'UPDATE user_commands SET lock=0 WHERE cmdname="{cmd_name}"')
     await context.send(f"Command '{cmd_name}' has been unlocked.")
     title = f"User Unlocked a Command"
     fields = {"User":f"{context.author.mention}\n{context.author}",
@@ -198,7 +198,7 @@ class CommandCog(commands.Cog, name="Command Management"):
       await context.send(f"Command '{cmd_name}' is already global.")
       return
     set_new_cmd(None, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], cmd["perm"])
-    self.bot.db[context.guild.id].query(f"UPDATE user_commands SET glob=1 WHERE cmdname='{cmd_name}'")
+    self.bot.db[context.guild.id].query(f'UPDATE user_commands SET glob=1 WHERE cmdname="{cmd_name}"')
     await context.send(f"Command '{cmd_name}' has become global.")
     title = f"User Gobalized a Command"
     fields = {"User":f"{context.author.mention}\n{context.author}",
@@ -219,7 +219,7 @@ class CommandCog(commands.Cog, name="Command Management"):
       await context.send(f"Command '{cmd_name}' is already server-specific.")
       return
     set_new_cmd(context.guild, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], cmd["perm"])
-    self.bot.db[context.guild.id].query(f"UPDATE user_commands SET glob=0 WHERE cmdname='{cmd_name}'")
+    self.bot.db[context.guild.id].query(f'UPDATE user_commands SET glob=0 WHERE cmdname="{cmd_name}"')
     await context.send(f"Command '{cmd_name}' has become server-specific.")
     title = f"User Ungobalized a Command"
     fields = {"User":f"{context.author.mention}\n{context.author}",
@@ -246,7 +246,7 @@ class CommandCog(commands.Cog, name="Command Management"):
       return
     guild = None if cmd["glob"] else context.guild
     set_new_cmd(guild, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], permission)
-    self.bot.db[context.guild.id].query(f"UPDATE user_commands SET perm={permission} WHERE cmdname='{cmd_name}'")
+    self.bot.db[context.guild.id].query(f'UPDATE user_commands SET perm={permission} WHERE cmdname="{cmd_name}"')
     await context.send(f"Updated command '{cmd_name}' permission.")
     title = f"User Update a Command Permission"
     fields = {"User":f"{context.author.mention}\n{context.author}",
