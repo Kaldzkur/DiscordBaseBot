@@ -75,9 +75,32 @@ Select a row or table from the database
 Execute a custom query
 
 for more information use the help command `?help db`.
+
 ### Settings
-#### Default settings
-#### Add/edit/remove/reset settings
+Settings are parameters of the bot which are stored in the table 'bot_settings', you can access and edit them by command `?settings`. Default settings are settings that are actually referred in the bot's program. Chaning a default setting will overwrites the value in database, applies the change in the server if applicable (such as the role/channel names), and affects the commands of the bot. The following default settings are supported:
+'''
+  MAX_WARNINGS:      max allowed warnings
+  WARN_DURATION:     warning expiry (day)
+  MUTE_DURATION:     mute expiry (day)
+  MOD_ROLE_NAME:     gives mod commands
+  ADMIN_ROLE_NAME:   gives admin commands
+  BOT_ROLE_NAME:     role the bot claims
+  CMD_ROLE_NAME:     gives command editing access
+  MUTE_ROLE_NAME:    revokes posting access
+  BOT_CATEGORY_NAME: category for logs
+  NUM_DELETE_CACHE:  num of restorable deleted messages
+  MODMAIL_EXPIRY:    modmail expiry (min)
+  AUTO_MODMAIL:      on/off modmail auto deletion
+  AUTO_UPDATE:       on/off slaps/stats auto update
+  ERROR_LOG:         on/off error logging
+  ADMIN_LOG:         on/off admin logging
+  MOD_LOG:           on/off mod logging
+  AUDIT_LOG:         on/off audit logging
+  ACTIVE_TIME:       interactive message active time
+'''
+
+If you need to add your own default settings, you can override the `initialize_default_settings()` method in the base bot.
+
 ### Custom Commands
 One of the main features of the bot is that it supports custom commands created by other users.
 These commands are stored in a database and loaded when the bot boots up.
