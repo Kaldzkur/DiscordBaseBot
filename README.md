@@ -77,7 +77,7 @@ Execute a custom query
 for more information use the help command `?help db`.
 
 ### Settings
-Settings are parameters of the bot which are stored in the table 'bot_settings', you can access and edit them by command `?settings`. Default settings are settings that are actually referred in the bot's program. Changing a default setting will overwrites the value in database, applies the change in the server if applicable (such as the role/channel names), and affects the commands of the bot. The following default settings are supported:
+Settings are parameters of the bot which are stored in the table 'bot_settings', admins can access and edit them by command `?settings`. Default settings are settings that are actually referred in the bot's program. Changing a default setting will overwrites the value in database, applies the change in the server if applicable (such as the role/channel names), and affects the commands of the bot. The following default settings are supported:
 ````text
   MAX_WARNINGS:      max allowed warnings
   WARN_DURATION:     warning expiry (day)
