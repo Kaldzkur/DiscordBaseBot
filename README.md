@@ -97,6 +97,13 @@ For example:
 
 `?cmd edit name newtext` will replace the text of an existing command with `newtext`.
 
+
+By default a custom command/group also accepts optional arguments including `-d` (for command or group) `-r` (for group only). `-d` will help you delete your original command message if possible, `-r` will invoke a random subcommand in a command group, with all arguments propagated.
+
+A command can be specified to have access permissions required, this can be set by `?cmd perm <lv>`. Permission lv1 grants access to all members, lv2 grants access to mods and owners, lv3 grants access to admins and owners, lv4 grants access only to owners.
+
+If you are using the bot on multiple servers, you can also set the commands to be sever-specific or global by `?cmd glob` and `?cmd unglob`. The commands are server-specific by default.
+
 Once a command is finished it can be locked by an admin using `?cmd lock`.
 ### Channel Management
 #### Channel mute/unmute/open/close
