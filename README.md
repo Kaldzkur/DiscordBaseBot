@@ -98,7 +98,7 @@ For example:
 `?cmd edit name newtext` will replace the text of an existing command with `newtext`.
 
 
-By default a custom command/group also accepts optional arguments including `-d` (for command or group) `-r` (for group only). `-d` will help you delete your original command message if possible, `-r` will invoke a random subcommand in a command group, with all arguments propagated.
+By default a custom command/group also accepts optional arguments including `-d` (for command or group) `-r` (for group only). `-d` will help you delete your original command message if possible, `-r` will invoke a random subcommand in a command group, with all arguments propagated. Usage: `?name -[option] [args]...`.
 
 A command can be specified to have access permissions required, this can be set by `?cmd perm <lv>`. Permission lv1 grants access to all members, lv2 grants access to mods and owners, lv3 grants access to admins and owners, lv4 grants access only to owners.
 
