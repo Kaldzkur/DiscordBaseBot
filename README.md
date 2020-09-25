@@ -99,7 +99,7 @@ Settings are parameters of the bot which are stored in the table 'bot_settings',
   ACTIVE_TIME:       interactive message active time
 ````
 
-If you need to add your own default settings, you can override the `initialize_default_settings()` method in the base bot.
+If you need to add your own default settings, you can override `initialize_default_settings()` method in the base bot.
 
 ### Custom Commands
 One of the main features of the bot is that it supports custom commands created by other users.
