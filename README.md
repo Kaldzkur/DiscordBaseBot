@@ -78,7 +78,7 @@ for more information use the help command `?help db`.
 
 ### Settings
 Settings are parameters of the bot which are stored in the table 'bot_settings', you can access and edit them by command `?settings`. Default settings are settings that are actually referred in the bot's program. Chaning a default setting will overwrites the value in database, applies the change in the server if applicable (such as the role/channel names), and affects the commands of the bot. The following default settings are supported:
-'''
+````text
   MAX_WARNINGS:      max allowed warnings
   WARN_DURATION:     warning expiry (day)
   MUTE_DURATION:     mute expiry (day)
@@ -97,7 +97,7 @@ Settings are parameters of the bot which are stored in the table 'bot_settings',
   MOD_LOG:           on/off mod logging
   AUDIT_LOG:         on/off audit logging
   ACTIVE_TIME:       interactive message active time
-'''
+````
 
 If you need to add your own default settings, you can override the `initialize_default_settings()` method in the base bot.
 
