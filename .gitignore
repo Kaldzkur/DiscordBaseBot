@@ -14,3 +14,5 @@ cache
 backup_*
 # Ignore modmails
 mail/*
+# Ignore Readme
+README.md
