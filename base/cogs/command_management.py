@@ -83,13 +83,22 @@ class CommandCog(commands.Cog, name="Command Management"):
     except Exception as e:
       parent.add_command(old_cmd)
       raise e
-    # move the commands
-    if isinstance(old_cmd, commands.Group) and isinstance(new_cmd, commands.Group):
-      for command in old_cmd.commands: # move the commands from the old one to the new one
-        new_cmd.add_command(command)
-        self.bot.db[context.guild.id].query(f'UPDATE user_commands SET cmdname="{new_name} {command.name}" WHERE cmdname="{cmd_name} {command.name}"')
-    self.bot.db[context.guild.id].query(f'UPDATE user_commands SET cmdname="{new_name}" WHERE cmdname="{cmd_name}"')
+    # move all subcommands and update the names of commands in db
+    self.move_subcommands(context.guild, new_cmd, old_cmd)
     await self.log_cmd_update(context, new_name, cmd["message"], attributes, cmd["isgroup"], "Renamed Command")
+    
+  def move_subcommands(self, guild, new_cmd, old_cmd):
+    self.bot.db[guild.id].query(f'UPDATE user_commands SET cmdname="{new_cmd.qualified_name}" WHERE cmdname="{old_cmd.qualified_name}"')
+    if isinstance(new_cmd, commands.Group) and isinstance(old_cmd, commands.Group):
+      for command in old_cmd.commands:
+        new_cmd.add_command(command)
+        self.db_rename_commands(guild, command, f"{old_cmd.qualified_name} {command.name}")
+
+  def db_rename_commands(self, guild, new_cmd, old_name):
+    self.bot.db[guild.id].query(f'UPDATE user_commands SET cmdname="{new_cmd.qualified_name}" WHERE cmdname="{old_name}"')
+    if isinstance(new_cmd, commands.Group):
+      for command in new_cmd.commands:
+        self.db_rename_commands(guild, command, f"{old_name} {command.name}")
 
   @_cmd.command(
     name="edit",
@@ -125,7 +134,7 @@ class CommandCog(commands.Cog, name="Command Management"):
       raise LookupError(f"Custom command '{cmd_name}' is locked and canot be edited.")
     parent.remove_command(child)
     self.bot.db[context.guild.id].delete_row("user_commands", cmd_name)
-    await self.log_cmd_update(context, cmd_name, cmd["message"], {}, cmd["isgroup"], "Removed Command")
+    await self.log_cmd_update(context, cmd_name, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], "Removed Command")
 
   @_cmd.command(
     name="alias",
