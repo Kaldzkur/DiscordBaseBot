@@ -1,5 +1,5 @@
 #!/bin/sh
-PID=$(/usr/bin/pgrep python3)
+PID=$(/usr/bin/pgrep -f base_bot.py)
 if [ "$PID" != "" ]
 then
   echo "Bot is already running"
