@@ -34,8 +34,8 @@ if __name__ == "__main__":
   import dotenv
   from base.modules.interactive_help import InteractiveHelpCommand
   dotenv.load_dotenv()
-  TOKEN = os.getenv("DISCORD_TOKEN")
-  OWNER = os.getenv("OWNER_ID")
+  TOKEN = int(os.getenv("DISCORD_TOKEN"))
+  OWNER = int(os.getenv("OWNER_ID"))
   SERVER = int(os.getenv("SERVER_ID"))
   #This lookup maps all cog names to a name used in the interactive help.
   cog_categories = {
