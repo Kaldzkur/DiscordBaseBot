@@ -751,7 +751,7 @@ if __name__ == "__main__":
   TOKEN = os.getenv("DISCORD_TOKEN")
   APPA = int(os.getenv("APPA_ID"))
   SIN = int(os.getenv("SIN_ID"))
-  SERVER = int(os.getenv("SERVER_ID"))
+  #SERVER = int(os.getenv("SERVER_ID"))
   cog_categories = {
     "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
     "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands"],
@@ -770,5 +770,5 @@ if __name__ == "__main__":
     case_insensitive = True,
     help_command = InteractiveHelpCommand(cog_categories)
   )
-  bot.set_main_server(SERVER)
+  #bot.set_main_server(SERVER)
   bot.run(TOKEN)
