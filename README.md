@@ -14,8 +14,12 @@ pip install -U python-dateutil
 ````
 And you also need a .env file to specify all environment parameters:
 ```text
+# The token from your discord bot application
 DISCORD_TOKEN={YOUR_BOT_TOKEN}
+# Your discord ID, being a owner grants you all permissions of bot commands
 OWNER_ID={YOUR_DISCORD_ID}
+# Your main server ID, you can still connect to multiple server but the event log without "guild" attribute will be sent to your main server
+SERVER_ID={YOUR_SERVER_ID}
 ```
 ## Extending the bot for your discord
 Creating your own custom bot is fairly easy.
