@@ -13,27 +13,23 @@ from base.modules.custom_commands import add_cmd_from_row
 from base.modules.db_manager import Database
 from base.modules.settings_manager import Settings
 from base.modules.settings_manager import DefaultSetting
+from base.modules.constants import games, animes
 
 class BaseBot(commands.Bot):
 
-  games = [
-    "The Legend of Zelda: A Link to the Past","The Legend of Zelda: Ocarina of Time","The Legend of Zelda: Majora's Mask","The Legend of Zelda: The Wind Waker",
-    "Super Mario 64","Super Mario Galaxy","Pokemon Red","Pokemon Blue","Pokemon Gold","Pokemon Silver",
-    "Final Fantasy I","Final Fantasy II","Final Fanatasy III","Final Fantasy IV","Final Fantasy V","Final Fanatasy VI",
-    "Final Fantasy VII","Final Fantasy VIII","Final Fantasy IX","Final Fantasy X","Final Fantasy XII","Final Fantasy XIII",
-    "Diablo III","Halo 3: ODST","Halo: Reach","Super Smash Bros. Melee","Kingdom Hearts","Kingdom Hearts II",
-    "Ōkami","Assassin's Creed","Assassin's Creed II","Assassin's Creed III", "Halo: Combat Evolved",
-    "Dark Souls","Dark Souls II","Dark Souls III","Bloodborne", "Red Dead Redemption",
-    "The Witcher II: Assassins of Kings","The Witcher III: The Wild Hunt", "World of Warcraft",
-    "Realm Defense", "League of Legends", "Mass Effect", "Chrono Trigger", "Tetris",
-  ]
-
-  anime = [
-    "Fullmetal Alchemist: Brotherhood","Fullmetal Alchemist","Attack on Titan","Akame ga KILL!", "Elfen Lied",
-    "Dragon Ball","Steins;Gate","Overlord","Death Parade","Death Note","Angel Beats!", "Vinland Saga",
-    "Dr. Stone","Fate/stay night","Fate/Stay Night: Unlimited Blade Works","Clannad","Violet Evergarden","Accel World",
-    "The Promised Neverland", "Kami no Tou", 
-  ]
+  def __init__(self, *arg, **kwargs):
+    self.main_server_id = kwargs.pop("server_id", None)
+    super().__init__(*arg, **kwargs)
+    self.intialized = {}
+    self.db = {}
+    self.user_stats = {}
+    self.settings = {}
+    self.default_settings = {}
+    @self.check # add a global check to the bot
+    def check_initialized(context):
+      if context.guild.id not in context.bot.intialized or not context.bot.intialized[context.guild.id]:
+        raise commands.CheckFailure("Guild {context.guild.name} is not initialized")
+      return True
 
   async def find_prefix(self, message):
     prefix = await self.get_prefix(message)
@@ -160,6 +156,9 @@ class BaseBot(commands.Bot):
           await add_cmd_from_row(self, guild, cmd)
         except Exception as e:
           print(f"Error when adding command {cmd['cmdname']}: {e}")
+          
+  def get_guild_prefix(self, guild):
+    return self.get_setting(guild, "PREFIX")
 
   def get_log(self, guild, name):
     bot_category = self.get_bot_category(guild)
@@ -194,9 +193,9 @@ class BaseBot(commands.Bot):
   async def set_random_status(self):
     n = random.randint(0,1)
     if n == 0:
-      await self.change_presence(activity=discord.Game(name=random.choice(self.games)))
+      await self.change_presence(activity=discord.Game(name=random.choice(games)))
     elif n == 1:
-      await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=random.choice(self.anime)))
+      await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=random.choice(animes)))
 
   def update_user_stats(self, guild):
     db = self.db[guild.id]
@@ -249,9 +248,7 @@ class BaseBot(commands.Bot):
         guild = first_arg
       else:
         if isinstance(first_arg, discord.Reaction):
-          first_arg = first_arg.message.channel
-        elif isinstance(first_arg, discord.Message):
-          first_arg = first_arg.channel
+          first_arg = first_arg.message
         if hasattr(first_arg, "guild"):
           guild = first_arg.guild
         elif hasattr(fist_arg, "guild_id"):
@@ -529,7 +526,7 @@ class BaseBot(commands.Bot):
   async def on_message(self, message):
     if message.type != discord.MessageType.default:
       return # ignores a system message
-    if hasattr(message, "guild") and hasattr(message.guild, "id"): #only guild messages are parsed
+    if hasattr(message, "guild") and message.guild: #only guild messages are parsed
       if message.content != "":
         prefix = await self.find_prefix(message)
         if prefix is not None:
@@ -562,23 +559,10 @@ class BaseBot(commands.Bot):
     await self.load_custom_commands(guild)
 
   async def on_ready(self):
-    self.intialized = {}
-    if not hasattr(self, "db"):
-      self.db = {}
-    if not hasattr(self, "user_stats"):
-      self.user_stats = {}
-    if not hasattr(self, "settings"):
-      self.settings = {}
-    if not hasattr(self, "default_settings"):
-      self.initialize_default_settings()
+    self.initialize_default_settings()
     for guild in self.guilds:
       await self.init_bot(guild)
     #Loading base extensions.
-    @self.check # add a global check to the bot
-    def check_initialized(context):
-      if context.guild.id not in context.bot.intialized or not context.bot.intialized[context.guild.id]:
-        raise commands.CheckFailure("Guild {context.guild.name} is not initialized")
-      return True
     self.load_all_cogs()
     for guild in self.guilds:
       await self.load_custom_commands(guild) # make sure the custom commands are loaded after cog is loaded
@@ -667,7 +651,9 @@ class BaseBot(commands.Bot):
     
   def initialize_default_settings(self):
     bot_name = self.user.name
-    self.default_settings = {}
+    self.default_settings["PREFIX"] = DefaultSetting(name="PREFIX", default="?", description="command prefix")
+    self.default_settings["MAX_WARNINGS"] = DefaultSetting(name="MAX_WARNINGS", default=4, description="max allowed warnings", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer")
     self.default_settings["MAX_WARNINGS"] = DefaultSetting(name="MAX_WARNINGS", default=4, description="max allowed warnings", 
       transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer")
     self.default_settings["WARN_DURATION"] = DefaultSetting(name="WARN_DURATION", default=5, description="warning expiry (day)", 
@@ -733,14 +719,19 @@ class BaseBot(commands.Bot):
       db.close()
     print("The bot client is completely closed")
     
-  def set_main_server(self, id):
-    self.main_server_id = id
-    
   @property
   def main_server(self):
     if not hasattr(self, "main_server_id"):
       return None
     return self.get_guild(self.main_server_id)
+    
+def dynamic_prefix(bot, message):
+  if message.type != discord.MessageType.default:
+    return
+  if hasattr(message, "guild") and message.guild:
+    return bot.get_guild_prefix(message.guild)
+  else: #in DMs the bot can respond to prefix-less messages
+    return "?", ""
 
 if __name__ == "__main__":
   import os
@@ -751,24 +742,17 @@ if __name__ == "__main__":
   TOKEN = os.getenv("DISCORD_TOKEN")
   APPA = int(os.getenv("APPA_ID"))
   SIN = int(os.getenv("SIN_ID"))
-  #SERVER = int(os.getenv("SERVER_ID"))
+  SERVER = int(os.getenv("SERVER_ID"))
   cog_categories = {
     "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
     "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands"],
     "Miscellaneous":["Command Management", "General Commands"]
   }
-  async def dynamic_prefix(bot, message):
-    if message.type != discord.MessageType.default:
-      return
-    if hasattr(message, "guild"):
-      return "?"
-    else: #in DMs the bot can respond to prefix-less messages
-      return "?", ""
   bot = BaseBot(
-    command_prefix="?",
+    command_prefix=dynamic_prefix,
     owner_ids=set([APPA, SIN]),
     case_insensitive = True,
-    help_command = InteractiveHelpCommand(cog_categories)
+    help_command = InteractiveHelpCommand(cog_categories),
+    server_id = SERVER
   )
-  #bot.set_main_server(SERVER)
   bot.run(TOKEN)

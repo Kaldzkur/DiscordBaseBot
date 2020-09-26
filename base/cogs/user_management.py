@@ -227,9 +227,11 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         f"it will expire after {2*warn_duration} days from the time you got the last warning. "
         f"If you get no additional warnings during the expiry time, then all your warnings will be reset."
         f"If you receive more than {max_warnings} warnings without them expiring first, then you will be removed from the server. "
-        f"If you want to check the current status of your warnings, use the `?warn info` or `?slap info` command.\n\n"
-        f"If you have something to discuss with the mods, then use the `?modmail` command. You can specify the reason for opening the channel using `?modmail your reason`. "
-        f"To dispute any warnings, use the `?modmail` command."
+        f"If you want to check the current status of your warnings, "
+        f"use the `{self.bot.get_guild_prefix(member.guild)}warn info` or `{self.bot.get_guild_prefix(member.guild)}slap info` command.\n\n"
+        f"If you have something to discuss with the mods, then use the `{self.bot.get_guild_prefix(member.guild)}modmail` command. "
+        f"You can specify the reason for opening the channel using `{self.bot.get_guild_prefix(member.guild)}modmail your reason`. "
+        f"To dispute any warnings, use the `{self.bot.get_guild_prefix(member.guild)}modmail` command."
       )
     except: #could not send dm
       pass

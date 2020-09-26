@@ -63,7 +63,7 @@ async def get_cmd_help_string(command, prefix, page=None, display_all_subcommand
     else:
       cmd_str.append("`")
   if command.help:
-    cmd_str.append(f"\n\n{command.help}")
+    cmd_str.append(f"\n\n{command.help.format(prefix=prefix)}")
   return "".join(cmd_str)
 
 class InteractiveHelpCommand(commands.HelpCommand):

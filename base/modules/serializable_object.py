@@ -287,7 +287,7 @@ class SecretChannelEntry(SerializableObject):
         # expired
         hint_content = (f"Hey {user_mention}, don't forget to close the channel if it is not needed anymore. "
           f"If no more messages are sent within the next {expiry} minutes, this channel will be closed automatically.\n"
-          f"Send `?modmail alive` to prevent this channel from closing.")
+          f"Send `{cog.bot.get_guild_prefix(guild)}modmail alive` to prevent this channel from closing.")
         if last_msg is not None and last_msg.author.id == cog.bot.user.id and last_msg.content == hint_content:
           # delete the channel
           await cog.delete_secret_channel(channel, user, "Auto deleted because of no activity")

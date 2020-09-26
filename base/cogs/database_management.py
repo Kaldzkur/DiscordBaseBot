@@ -46,7 +46,7 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
     name="createtable",
     brief="Creates a new table.",
     help="Parameters:\n name - the name of the table\n primary_key - the PRIMARY KEY of the table(mandatory)\n key1=int,... - each column key with the corresponding data type(int or txt) (Syntax: keyname=type)",
-    description="This command creates a new table in the database.\nUsage:",
+    description="This command creates a new table in the database.",
     usage="name <primary_key> key1=int key2=txt ...",
     aliases=["table"]
   )
@@ -66,8 +66,8 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
   @_db.command(
     name="insert",
     brief="Inserts or updates a row.",
-    help="Parameters:\n  name - the name of the table\n  primary_key - the value of the primary key\n  value1 value2 ... - the values of each column in the order as specified in the command: `?db info tablename`",
-    description="This command inserts or updates a row with the primary_key.\nUsage:",
+    help="Parameters:\n  name - the name of the table\n  primary_key - the value of the primary key\n  value1 value2 ... - the values of each column in the order as specified in the command: `{prefix}db info tablename`",
+    description="This command inserts or updates a row with the primary_key.",
     usage="name primary_key value1 value2 ...",
     aliases=["update", "set"]
   )
@@ -96,7 +96,7 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
     name="row",
     brief="Deletes a row.",
     help="Parameters:\n  name - the name of the table\n  value1 value2 ... - the values of the primary keys",
-    description="This command deletes a row.\nUsage:",
+    description="This command deletes a row.",
     usage="name value1 value2 ...",
   )
   @has_admin_role()
@@ -115,7 +115,7 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
     name="table",
     brief="Deletes a table",
     help="Parameters:\n  name - the name of the table",
-    description="This command deletes a table from the database.\nUsage:",
+    description="This command deletes a table from the database.",
   )
   @has_admin_role()
   async def _db_drop_table(self, context, _name):
@@ -130,7 +130,7 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
     name="select",
     brief="Gets entry from table",
     help="Parameters:\n name - the name of the table\n value - the value of the primary key",
-    description="This command fetches one entry from a table with a given primary key, or all if none is given.\nUsage:",
+    description="This command fetches one entry from a table with a given primary key, or all if none is given.",
     usage="tablename [value]",
     aliases=["fetch","get"]
   )
@@ -192,7 +192,7 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
     name="info",
     brief="Displays info on the db",
     help="Parameters:\n  name - the name of the table",
-    description="This command displays info on the database or a given table.\nUsage:",
+    description="This command displays info on the database or a given table.",
   )
   @has_admin_role()
   async def _info(self, context, _name=None):
