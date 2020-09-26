@@ -97,7 +97,6 @@ class Settings:
     self.memory.pop(key, None)
 
   def info(self):
-    max_len = str(max([len(k) for k in self.memory])+1)
-    template_str = "  {0:__STR_FORMAT_LEN__} {1}".replace("__STR_FORMAT_LEN__", max_len)
-    setting_str = "\n".join([template_str.format(f"{k}:", v[1]) for k,v in self.memory.items()])
+    max_len = max([len(k) for k in self.memory])+2
+    setting_str = "\n".join([f"{k+':':<{max_len}}{v[1]}" for k,v in self.memory.items()])
     return "\n".join(["Possible Settings:", setting_str])
