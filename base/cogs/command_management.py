@@ -14,9 +14,9 @@ class CommandCog(commands.Cog, name="Command Management"):
       # This prevents any commands with local handlers being handled here.
       return
     if isinstance(error, commands.CheckFailure):
-      await context.send(f"Sorry {context.author.mention}, but you do not have permission to execute '?{context.command.qualified_name}'.")
+      await context.send(f"Sorry {context.author.mention}, but you do not have permission to execute '{context.prefix}{context.command.qualified_name}'.")
     elif isinstance(error, commands.UserInputError):
-      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `?{context.command.qualified_name}`:\n{error}")
+      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.prefix}{context.command.qualified_name}`:\n{error}")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, commands.CommandRegistrationError):
       await context.send(f"Sorry {context.author.mention}, but your operation failed:\n{error.original}")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, (NameError, LookupError)):
@@ -51,7 +51,7 @@ class CommandCog(commands.Cog, name="Command Management"):
   @_cmd.command(
     name="gadd",
     brief="Adds a command group",
-    help="Adds a new permanent command group to the bot. The command will send the text or send the help if text is empty, when ?name is invoked. String key-value pairs are supported and will be passed to the command, but name attribute will be ignored. You MUST add a new line between the key-value pairs, and MUST NOT add a new line inside the key-value pairs (except cmd_text), the last key MUST be cmd_text which is the text sent by the command.\n\nIf you need to have arguments, you can input '{}' in your text just like a python string format. For example `?cmd add hello Say hello to {}` will add a command that takes one argument, and invoking `?hello bot` will resulting in a response `Say hello to bot`. If you are not a mod, the mentions in arguments of the custom commands will removed.\n\nCustom command group also supports -d/-r as an optional argument, -d will delete the original command after a successful invocation, -r will invoke a random subcommand with the same arguments.",
+    help="Adds a new permanent command group to the bot. The command will send the text or send the help if text is empty, when `?name` is invoked. String key-value pairs are supported and will be passed to the command, but name attribute will be ignored. You MUST add a new line between the key-value pairs, and MUST NOT add a new line inside the key-value pairs (except cmd_text), the last key MUST be cmd_text which is the text sent by the command.\n\nIf you need to have arguments, you can input '{}' in your text just like a python string format. For example `?cmd add hello Say hello to {}` will add a command that takes one argument, and invoking `?hello bot` will resulting in a response `Say hello to bot`. If you are not a mod, the mentions in arguments of the custom commands will removed.\n\nCustom command group also supports -d/-r as an optional argument, -d will delete the original command after a successful invocation, -r will invoke a random subcommand with the same arguments.",
     usage="<cmd_name> [attribute=value]... [cmd_text=value]"
   )
   @can_edit_commands()

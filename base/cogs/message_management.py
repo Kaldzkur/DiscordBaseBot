@@ -59,7 +59,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     elif isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to manage messages in the specific channel!")
     elif isinstance(error, commands.UserInputError):
-      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `?{context.command.qualified_name}`.")
+      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.prefix}{context.command.qualified_name}`.")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, discord.Forbidden):
       await context.send(f"Sorry {context.author.mention}, but I do not have permission to post in the specified channel.")
     else:
@@ -436,7 +436,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   @commands.group(
     name="schedule",
     brief="Schedules a message",
-    help="Schedules to send a message in a specific channel. Time has to be in \"%d%h%m%s\" format or a formatted absolute time. If channel is not specified, it will send the message to the current channel. If no content is specified, it will send a reminder mentioning the author.\n\nFor example, to schedule a text in 2 hours 10 minites, use:\n?schedule 2h10m some text\nTo schedule a text at Sep 10 10am at timezone -05:00, use:\n?schedule \"9-10 10am -0500\" some text\nWithout a timezone the absolute time will be interpreted as UTC time.",
+    help="Schedules to send a message in a specific channel. Time has to be in \"%d%h%m%s\" format or a formatted absolute time. If channel is not specified, it will send the message to the current channel. If no content is specified, it will send a reminder mentioning the author.\n\nFor example, to schedule a text in 2 hours 10 minites, use:\n`?schedule 2h10m some text`\nTo schedule a text at Sep 10 10am at timezone -05:00, use:\n`?schedule \"9-10 10am -0500\" some text`\nWithout a timezone the absolute time will be interpreted as UTC time.",
     usage="[#channel] <time> [text]",
     case_insensitive = True,
     invoke_without_command=True
@@ -614,7 +614,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     name="remind",
     brief="Sends a reminder message",
     usage="<time> [text]",
-    help="Schedules to send a reminder message mentioning the author in future in the current channel. Time has to be in \"%d%h%m%s\" format or a formatted absolute time. If no text is specified it will just send a default reminder. All the mentions in the text will be removed.\n\nFor example, to schedule a text in 2 hours 10 minites, use:\n?remind 2h10m some text\nTo schedule a text at Sep 10 10am at timezone -05:00, use:\n?remind \"9-10 10am -0500\" some text\nWithout a timezone the absolute time will be interpreted as UTC time.",
+    help="Schedules to send a reminder message mentioning the author in future in the current channel. Time has to be in \"%d%h%m%s\" format or a formatted absolute time. If no text is specified it will just send a default reminder. All the mentions in the text will be removed.\n\nFor example, to schedule a text in 2 hours 10 minites, use:\n`?remind 2h10m some text`\nTo schedule a text at Sep 10 10am at timezone -05:00, use:\n`?remind \"9-10 10am -0500\" some text`\nWithout a timezone the absolute time will be interpreted as UTC time.",
     aliases=["reminder"]
   )
   @commands.has_permissions(read_messages=True, send_messages=True)

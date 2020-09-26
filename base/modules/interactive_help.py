@@ -55,7 +55,7 @@ async def get_cmd_help_string(command, prefix, page=None, display_all_subcommand
         and math.ceil(float(len_orig_subs)/len_num) -1 != page):
       #if no last page
       cmd_str.append(f"To see more subcommands use {arrow_emojis['forward']}.\n")
-    cmd_str.append(f"For more information use `?help {command.qualified_name} <command>`.")
+    cmd_str.append(f"For more information use `{prefix}help {command.qualified_name} <command>`.")
   else:
     signature = command.signature
     if signature:
@@ -257,8 +257,7 @@ class InteractiveHelpGroup(InteractiveMessage):
   '''
 
   async def get_embed(self):
-    prefix = await self.context.bot.find_prefix(self.context.message)
-    description = await get_cmd_help_string(self.group, prefix, self.page_number, help_cmd=self.help_cmd)
+    description = await get_cmd_help_string(self.group, self.context.prefix, self.page_number, help_cmd=self.help_cmd)
     if isinstance(self.group, commands.Group):
       embed = discord.Embed(title=f"Group `{self.group.qualified_name}` Help", description=description)
     else:

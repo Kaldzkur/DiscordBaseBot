@@ -63,8 +63,8 @@ class CategoryHelpCommand(commands.DefaultHelpCommand):
       for command in commandMapping[category]:
         msg = await self.smart_append_msg(msg, f"{'':<{self.indent}}{command.name:<{max_len}} {command.short_doc}")
     msg = await self.smart_append_msg(msg, "") # empty line
-    msg = await self.smart_append_msg(msg, "Type ?help command for more info on a command.")
-    msg = await self.smart_append_msg(msg, "You can also type ?help category for more info on a category.")
+    msg = await self.smart_append_msg(msg, f"Type {self.context.prefix}help command for more info on a command.")
+    msg = await self.smart_append_msg(msg, f"You can also type {self.context.prefix}help category for more info on a category.")
     await self.send_code_block(msg)
     
   async def smart_append_msg(self, msg, new_msg):

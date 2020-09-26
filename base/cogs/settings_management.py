@@ -16,7 +16,7 @@ class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
     if isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to modify my settings.")
     elif isinstance(error, commands.UserInputError):
-      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `?{context.command.qualified_name}`.")
+      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.prefix}{context.command.qualified_name}`.")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, (LookupError, TypeError,)):
       await context.send(f"Sorry {context.author.mention}, but {error.original}")
     else:
