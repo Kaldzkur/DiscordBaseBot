@@ -99,4 +99,4 @@ class Settings:
   def info(self):
     max_len = max([len(k) for k in self.memory])+2
     setting_str = "\n".join([f"{k+':':<{max_len}}{v[1]}" for k,v in self.memory.items()])
-    return "\n".join(["Possible Settings:", setting_str])
+    return f"Possible Settings:\n{setting_str}"
