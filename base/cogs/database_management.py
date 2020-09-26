@@ -66,7 +66,7 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
   @_db.command(
     name="insert",
     brief="Inserts or updates a row.",
-    help="Parameters:\n  name - the name of the table\n  primary_key - the value of the primary key\n  value1 value2 ... - the values of each column in the order as specified in the command: `db info tablename`",
+    help="Parameters:\n  name - the name of the table\n  primary_key - the value of the primary key\n  value1 value2 ... - the values of each column in the order as specified in the command: `?db info tablename`",
     description="This command inserts or updates a row with the primary_key.\nUsage:",
     usage="name primary_key value1 value2 ...",
     aliases=["update", "set"]
