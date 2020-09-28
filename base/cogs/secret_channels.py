@@ -192,12 +192,23 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
     if self.get_auto_modmail(context.guild):
       await secret_channel_entry.set_auto_delete(context.guild, self)
     title = f"A {prefix[0:-1]} was opened"
-    fields = {"Created by":f"{context.author.mention}\n{context.author}" if member else f"{user.mention}\n{user}",
-              "Created for":f"{user.mention}\n{user}" if member else None,
+    fields = {#"Created by":f"{context.author.mention}\n{context.author}" if member else f"{user.mention}\n{user}",
+              #"Created for":f"{user.mention}\n{user}" if member else None,
               "Channel":f"{mail_channel.name}\n{mail_channel.id}",
               "Reason":reason if reason else "No reason specified"}
-    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
-
+    #await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    content = {
+      "user":user,
+      "action":f"opened a {prefix[0:-1]}",
+      #"title":title, 
+      "timestamp":context.message.created_at,
+      "fields";fields,
+    }
+    if member:
+      content["user"] = context.author,
+      content["action"] = f"was forced in a {prefix[0:-1]}"
+      content["target"] = user
+    await self.log_message(context.guild, "MOD_LOG", **content)
   @_modmail.command(
     name="alive",
     brief="Modmail won't auto expire",
