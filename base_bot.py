@@ -91,11 +91,14 @@ class BaseBot(commands.Bot):
           icon_url=content["target"].avatar_url
         )
         embed.set_thumbnail(url=content["user"].avatar_url)
+        content["fields"]["User"] = f"{content['target'].display_name}\n{content['target']}\nUID:{content['target'].id}"
+        content["fields"]["Action by:"] = f"{content['user'].display_name}\n{content['user']}\nUID:{content['user'].id}"
       else:
         embed.set_author(
           name=f"{content['user'].display_name} {content['action']}",
           icon_url=content["user"].avatar_url
-        )        
+        )
+        content["fields"]["User"] = f"{content['user'].display_name}\n{content['user']}\nUID:{content['user'].id}"
     for key, value in content["fields"].items():
       if key and value:
         embed.add_field(name=f"{key}:", value=f"{value}", inline=False)
