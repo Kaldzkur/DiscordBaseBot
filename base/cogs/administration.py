@@ -100,7 +100,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   async def _nick(self, context, nick=None):
     if nick is not None:
       await context.guild.me.edit(nick=nick)
-      await self.bot.lcontext.guild, "ADMIN_LOG", 
+      await self.bot.log_message(context.guild, "ADMIN_LOG", 
         user=context.author, action="changed bot nickname", fields={"Name":nick},
         timestamp=context.message.created_at
       )
