@@ -39,11 +39,14 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @has_admin_role()
   async def _activity_play(self, context, *, _name):
     await self.bot.change_presence(activity=discord.Game(name=_name))
-    title = "User set bot activity"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Type":"Playing",
-              "Name":_name}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Type":"Playing",
+      "Name":_name
+    }
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="set bot activity", fields=fields,
+      timestamp=context.message.created_at
+    )
 
   @_activity.command(
     name="watch",
@@ -52,11 +55,14 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @has_admin_role()
   async def _activity_watch(self, context, *, _name):
     await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=_name))
-    title = "User set bot activity"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Type":"Watching",
-              "Name":_name}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Type":"Watching",
+      "Name":_name
+    }
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="set bot activity", fields=fields,
+      timestamp=context.message.created_at
+    )
 
   @_activity.command(
     name="listen",
@@ -65,19 +71,14 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @has_admin_role()
   async def _activity_listen(self, context, *, _name):
     await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=_name))
-    title = "User set bot activity"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Type":"Listening",
-              "Name":_name}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
-
-  @commands.command(
-    name="eval",
-    brief="Evaluates python expression",
-  )
-  @commands.is_owner()
-  async def _eval(self, context, *, expr):
-    await context.send(eval(expr, {}, {"self":self, "context":context}))
+    fields = {
+      "Type":"Listening",
+      "Name":_name
+    }
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="set bot activity", fields=fields,
+      timestamp=context.message.created_at
+    )
 
   @commands.command(
     name="leave",
@@ -99,10 +100,10 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   async def _nick(self, context, nick=None):
     if nick is not None:
       await context.guild.me.edit(nick=nick)
-      title = "User set bot nickname"
-      fields = {"User":f"{context.author.mention}\n{context.author}",
-                "Name":nick}
-      await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+      await self.bot.lcontext.guild, "ADMIN_LOG", 
+        user=context.author, action="changed bot nickname", fields={"Name":nick},
+        timestamp=context.message.created_at
+      )
     await context.send(f"```Nick: {context.guild.me.nick}```")
 
   @commands.command(
@@ -113,9 +114,10 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @commands.is_owner()
   async def _upgrade(self, context):
     await context.send(f"> Starting upgrade of codebase...")
-    title = "User upgraded bot"
-    fields = {"User":f"{context.author.mention}\n{context.author}"}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="upgraded the bot",
+      timestamp=context.message.created_at
+    )
     await self.bot.close()
     os.system("sh upgrade.sh")
 
@@ -127,9 +129,10 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @commands.is_owner()
   async def _reboot(self, context):
     await context.send(f"> Rebooting...")
-    title = "User rebooted bot"
-    fields = {"User":f"{context.author.mention}\n{context.author}"}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_admin(context.guild, "ADMIN_LOG",
+      user=context.author, action="was rebooted", target=self.bot.user
+      timestamp=context.message.created_at
+    )
     await self.bot.close()
     os.system("sh reboot.sh")
 
@@ -141,9 +144,10 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   @commands.is_owner()
   async def _shutdown(self, context):
     await context.send(f"> Signing off...")
-    title = "User shut down bot"
-    fields = {"User":f"{context.author.mention}\n{context.author}"}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_admin(context.guild, "ADMIN_LOG",
+      user=context.author, action="was shut down", target=self.bot.user
+      timestamp=context.message.created_at
+    )
     await self.bot.close()
     os.system("sh shutdown.sh")
 
