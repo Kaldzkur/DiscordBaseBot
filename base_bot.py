@@ -49,7 +49,7 @@ class BaseBot(commands.Bot):
       return guild.me.name
     return guild.me.nick
 
-  async def log_message(self, guild, log_type, *, **content):
+  async def log_message(self, guild, log_type, **content):
     if log_type.upper() not in ["MOD_LOG", "ADMIN_LOG", "ERROR_LOG", "AUDIT_LOG"]:
       await self.log_message(
         guild, "ERROR_LOG",
@@ -91,14 +91,14 @@ class BaseBot(commands.Bot):
           icon_url=content["target"].avatar_url
         )
         embed.set_thumbnail(url=content["user"].avatar_url)
-        content["fields"]["User"] = f"{content['target'].display_name}\n{content['target']}\nUID:{content['target'].id}"
-        content["fields"]["Action by:"] = f"{content['user'].display_name}\n{content['user']}\nUID:{content['user'].id}"
+        content["fields"]["User"] = f"{content['target'].mention}\n{content['target']}\nUID:{content['target'].id}"
+        content["fields"]["Action by:"] = f"{content['user'].mention}\n{content['user']}\nUID:{content['user'].id}"
       else:
         embed.set_author(
           name=f"{content['user'].display_name} {content['action']}",
           icon_url=content["user"].avatar_url
         )
-        content["fields"]["User"] = f"{content['user'].display_name}\n{content['user']}\nUID:{content['user'].id}"
+        content["fields"]["User"] = f"{content['user'].mention}\n{content['user']}\nUID:{content['user'].id}"
     for key, value in content["fields"].items():
       if key and value:
         embed.add_field(name=f"{key}:", value=f"{value}", inline=False)
@@ -816,7 +816,6 @@ if __name__ == "__main__":
   TOKEN = os.getenv("DISCORD_TOKEN")
   APPA = int(os.getenv("APPA_ID"))
   SIN = int(os.getenv("SIN_ID"))
-  SERVER = int(os.getenv("SERVER_ID"))
   cog_categories = {
     "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
     "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands"],
@@ -827,6 +826,5 @@ if __name__ == "__main__":
     owner_ids=set([APPA, SIN]),
     case_insensitive = True,
     help_command = InteractiveHelpCommand(cog_categories),
-    server_id = SERVER
   )
   bot.run(TOKEN)

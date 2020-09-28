@@ -98,7 +98,6 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
   )
   @commands.bot_has_permissions(manage_channels=True)
   async def _modmail(self, context, member:typing.Optional[discord.Member], *, reason=""):
-    user = None
     mod_role = self.bot.get_mod_role(context.guild)
     admin_role = self.bot.get_admin_role(context.guild)
     roles = [x for x in [mod_role, admin_role] if x is not None]
@@ -191,24 +190,21 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
     await mail_channel.send("".join(msg))
     if self.get_auto_modmail(context.guild):
       await secret_channel_entry.set_auto_delete(context.guild, self)
-    title = f"A {prefix[0:-1]} was opened"
-    fields = {#"Created by":f"{context.author.mention}\n{context.author}" if member else f"{user.mention}\n{user}",
-              #"Created for":f"{user.mention}\n{user}" if member else None,
-              "Channel":f"{mail_channel.name}\n{mail_channel.id}",
-              "Reason":reason if reason else "No reason specified"}
-    #await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+              "Channel":f"{mail_channel.name}\nCID: {mail_channel.id}",
+              "Reason":reason if reason else "No reason specified"
+    }
     content = {
       "user":user,
       "action":f"opened a {prefix[0:-1]}",
-      #"title":title, 
       "timestamp":context.message.created_at,
-      "fields";fields,
+      "fields":fields,
     }
     if member:
       content["user"] = context.author,
       content["action"] = f"was forced in a {prefix[0:-1]}"
       content["target"] = user
-    await self.log_message(context.guild, "MOD_LOG", **content)
+    await self.bot.log_message(context.guild, "MOD_LOG", **content)
   @_modmail.command(
     name="alive",
     brief="Modmail won't auto expire",
@@ -230,10 +226,12 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
       if (not secret_channel["alive"] and secret_channel.cancel()):
         secret_channel["alive"] = True
         await context.send("Channel expiry removed.")
-        title = f"Removed channel expiry"
-        fields = {"User":f"{context.author.mention}\n{context.author}",
-                  "Channel":f"{context.channel.name}\n{context.channel.id}"}
-        await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+        await self.bot.log_message(context.guild, "MOD_LOG",
+          user=context.author,
+          action="removed channel expiry",
+          timestamp=context.message.created_at,
+          fields={"Channel":f"{context.channel.name}\nCID: {context.channel.id}",},
+        )
       else:
         await context.send("This channel has no expiry.")
     else:
@@ -288,11 +286,11 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
     secret_channel = self.get_secret_channel(channel)
     if secret_channel is not None:
       self.secret_channels[channel.guild.id].remove(secret_channel)
-    title = f"A {ch_type} channel was deleted"
-    fields = {"User":f"{user.mention}\n{user}" if user else "Unknown User",
-              "Channel":f"{channel.name}\n{channel.id}",
-              "Reason":reason}
-    await self.bot.log_mod(channel.guild, title=title, fields=fields)
+    await self.bot.log_message(channel.guild, "MOD_LOG",
+      user=user,
+      action=f"deleted a {ch_type}",
+      fields={"Reason":reason},
+    )
         
         
 def setup(bot):
