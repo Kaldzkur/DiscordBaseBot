@@ -37,7 +37,7 @@ class BotTimer(Timer):
     fields = {"Method":self._callback.__name__,
               "Task":self.task,
              f"{error.__class__.__name__}":f"{error}"}
-    await self.bot.log_error(self.guild, title=title, fields=fields)
+    await self.bot.log_message(self.guild, "ERROR_LOG", title=title, fields=fields)
 
     
 def run_bot_coroutine(bot, guild, callback, *args, **kwargs):
