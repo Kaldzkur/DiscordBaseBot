@@ -130,7 +130,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   async def _reboot(self, context):
     await context.send(f"> Rebooting...")
     await self.bot.log_admin(context.guild, "ADMIN_LOG",
-      user=context.author, action="was rebooted", target=self.bot.user
+      user=context.author, action="was rebooted", target=self.bot.user,
       timestamp=context.message.created_at
     )
     await self.bot.close()
@@ -145,7 +145,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   async def _shutdown(self, context):
     await context.send(f"> Signing off...")
     await self.bot.log_admin(context.guild, "ADMIN_LOG",
-      user=context.author, action="was shut down", target=self.bot.user
+      user=context.author, action="was shut down", target=self.bot.user,
       timestamp=context.message.created_at
     )
     await self.bot.close()
