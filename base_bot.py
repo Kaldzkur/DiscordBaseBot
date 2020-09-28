@@ -48,7 +48,67 @@ class BaseBot(commands.Bot):
     if guild.me.nick is None:
       return guild.me.name
     return guild.me.nick
-    
+
+  async def log_message(self, guild, log_type, *, **content):
+    if log_type.upper() not in ["MOD_LOG", "ADMIN_LOG", "ERROR_LOG", "AUDIT_LOG"]:
+      await self.log_message(
+        guild, "ERROR_LOG",
+        title="Invalid Log Type",
+        description=f"The log {log_type} does not exist.",
+      )
+      return
+    if self.get_setting(guild, log_type) != "ON":
+      return
+    if "title" not in content:
+      content["title"] = None
+    if "description" not in content:
+      content["description"] = None
+    if "colour" not in content:
+      if log_type == "MOD_LOG":
+        content["colour"] = discord.Colour.green()
+      elif log_type == "ADMIN_LOG":
+        content["colour"] = discord.Colour.blue()
+      elif log_type == "ERROR_LOG":
+        content["colour"] = discord.Colour.red()
+      elif log_type == "AUDIT_LOG":
+        content["colour"] = discord.Colour.gold()
+      else:
+        content["colour"] = discord.Colour.from_rgb(54,57,63)
+    if "timestamp" not in content:
+      content["timestamp"] = datetime.utcnow()
+    if "fields" not in content:
+      content["fields"] = {}
+    embed = discord.Embed(
+      title=content["title"],
+      description=content["description"],
+      colour=content["colour"],
+      timestamp=content["timestamp"]
+    )
+    if "user" in content:
+      if "target" in content:
+        embed.set_author(
+          name=f"{content['target'].display_name} {content['action']}",
+          icon_url=content["target"].avatar_url
+        )
+        embed.set_thumbnail(url=content["user"].avatar_url)
+      else:
+        embed.set_author(
+          name=f"{content['user'].display_name} {content['action']}",
+          icon_url=content["user"].avatar_url
+        )        
+    for key, value in content["fields"].items():
+      if key and value:
+        embed.add_field(name=f"{key}:", value=f"{value}", inline=False)
+    embed.set_footer(text=log_type.replace("_", " "))
+    if log_type == "MOD_LOG":
+      await self.get_log(guild, "mod-log").send(embed=embed)
+    elif log_type == "ADMIN_LOG":
+      await self.get_log(guild, "admin-log").send(embed=embed)
+    elif log_type == "ERROR_LOG":
+      await self.get_log(guild, "error-log").send(embed=embed)
+    elif log_type == "AUDIT_LOG":
+      await self.get_log(guild, "audit-log").send(embed=embed)
+
   async def log_error(self, guild, *, title, description=None, timestamp=None, fields:dict=None):
     if not self.get_setting(guild, "ERROR_LOG") == "ON":
       return
@@ -142,7 +202,8 @@ class BaseBot(commands.Bot):
     self.intialized[guild.id] = True
     print(f"({time}) {self.user} has connected to: {guild.name} ({guild.id})")
     try:
-      await self.log_admin(guild, title="Bot connected")
+      #await self.log_admin(guild, title="Bot connected")
+      await self.log_message(guild, "ADMIN_LOG", user=self.user, action="connected")
     except:
       pass
     
@@ -219,55 +280,65 @@ class BaseBot(commands.Bot):
   #This global command error handler just adds the embed to the error log.
   #Any additional stuff should be done before calling this handler from the subclass.
   async def on_command_error(self, context, error):
-    title = f"A {error.__class__.__name__} occured"
     if hasattr(error, "original"):
       error = error.original
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Channel":f"{context.message.channel.mention}",
+    fields = {"User":f"{context.author.mention}\n{context.author}\nUID:{context.author.id}",
+              "Channel":f"{context.message.channel.mention}\nCID:{context.message.channel.id}",
               "Command":f"{context.message.content}",
              f"{error.__class__.__name__}":f"{error}"}
-    await self.log_error(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
-  
+    #await self.log_error(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.log_message(context.guild, "ERROR_LOG",
+      title=f"A {error.__class__.__name__} occured",
+      fields=fields,
+      timestamp=context.message.created_at,
+    )
+
   # the error handler for task, need to be called in try except block in each task
   async def on_task_error(self, task, error, guild):
-    title = f"A {error.__class__.__name__} occured"
     if hasattr(error, "original"):
       error = error.original
     fields = {"Task":task,
              f"{error.__class__.__name__}":f"{error}"}
-    await self.log_error(guild, title=title, fields=fields)
-    
-  async def on_error(self, event, *args, **kwargs):
-    error = sys.exc_info()[1]
-    if len(args) > 0:
-      if isinstance(args[0], list):
-        first_arg = args[0][0]
-      else:
-        first_arg = args[0]
-      if isinstance(first_arg, discord.Guild):
-        guild = first_arg
-      else:
-        if isinstance(first_arg, discord.Reaction):
-          first_arg = first_arg.message
-        if hasattr(first_arg, "guild"):
-          guild = first_arg.guild
-        elif hasattr(fist_arg, "guild_id"):
-          guild = self.get_guild(fist_arg.guild_id)
-        else:
-          guild = None
-    else:
-      guild = None
-    if guild is None:
-      guild = self.main_server
-    if guild is not None:
-      title = f"A {error.__class__.__name__} occured"
-      if hasattr(error, "original"):
-        error = error.original
-      fields = {"Event":event,
-               f"{error.__class__.__name__}":f"{error}"}
-      await self.log_error(guild, title=title, fields=fields)
-    else:
-      await super().on_error(event, *args, **kwargs)
+    #await self.log_error(guild, title=title, fields=fields)
+    await self.log_message(guild, "ERROR_LOG",
+      title=f"A {error.__class__.__name__} occured",
+      fields=fields,
+    )
+
+#I do not think we need an on error handler!
+#Standard behaviour is to ignore exceptions and print them to stderr.
+#stderr is now printed to the log too
+#  async def on_error(self, event, *args, **kwargs):
+#    error = sys.exc_info()[1]
+#    if len(args) > 0:
+#      if isinstance(args[0], list):
+#        first_arg = args[0][0]
+#      else:
+#        first_arg = args[0]
+#      if isinstance(first_arg, discord.Guild):
+#        guild = first_arg
+#      else:
+#        if isinstance(first_arg, discord.Reaction):
+#          first_arg = first_arg.message
+#        if hasattr(first_arg, "guild"):
+#          guild = first_arg.guild
+#        elif hasattr(fist_arg, "guild_id"):
+#          guild = self.get_guild(fist_arg.guild_id)
+#        else:
+#          guild = None
+#    else:
+#      guild = None
+#    if guild is None:
+#      guild = self.main_server
+#    if guild is not None:
+#      title = f"A {error.__class__.__name__} occured"
+#      if hasattr(error, "original"):
+#        error = error.original
+#      fields = {"Event":event,
+#               f"{error.__class__.__name__}":f"{error}"}
+#      await self.log_error(guild, title=title, fields=fields)
+#    else:
+#      await super().on_error(event, *args, **kwargs)
 
   def create_tables(self, guild):
     if "user_warnings" not in self.db[guild.id]:
