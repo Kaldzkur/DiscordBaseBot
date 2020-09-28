@@ -201,7 +201,8 @@ class MessageSchedule(MessageCache):
                 "Content":text[:1021] + '...' if text and len(text) > 1021 else text,
                 "Embed size":len(embed_post) if embed_post else None,
                 "Files":f"{len(files)} file(s)" if files else None}
-      await bot.log_mod(guild, title=title, fields=fields)
+      #await bot.log_mod(guild, title=title, fields=fields)
+      await bot.log_message(guild, "MOD_LOG", user=bot.user, action="sent a scheduled message", fields=fields)
     except:
       pass
     
@@ -244,7 +245,8 @@ class CommandSchedule(MessageSchedule):
                 "Author":member.mention if member else 'Unknown Member',
                 "Channel":channel.mention if channel else 'Unknown Channel',
                 "Command":self["content"]}
-      await bot.log_mod(guild, title=title, fields=fields)
+      #await bot.log_mod(guild, title=title, fields=fields)
+      await bot.log_message(guild, "MOD_LOG", user=bot.user, action="processed a scheduled command", fields=fields)
     except:
       pass
       
