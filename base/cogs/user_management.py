@@ -561,7 +561,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   @commands.has_permissions(kick_members=True)
   @commands.bot_has_permissions(kick_members=True)
   @has_mod_role()
-  async def _warn_rm(self, context, members: commands.Greedy[discord.Member], number=1):
+  async def _warn_rm(self, context, members: commands.Greedy[discord.Member], number:typing.Optional[int]=1):
     if len(members) == 0:
       await context.send_help("warn remove")
       return

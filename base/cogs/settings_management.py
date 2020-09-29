@@ -46,7 +46,7 @@ class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
     await context.send(f"```{key} has been set to {value}.```")
     await self.bot.log_message(context.guild, "ADMIN_LOG",
       user=context.author, action="modified a setting",
-      description=f"{key}:\n{value", timestamp=context.message.created_at
+      description=f"{key}:\n{value}", timestamp=context.message.created_at
     )
 
   @_settings.command(
