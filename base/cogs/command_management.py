@@ -270,12 +270,15 @@ class CommandCog(commands.Cog, name="Command Management"):
     
   async def log_cmd_update(self, context, cmd_name, cmd_text, attributes, isgroup, action):
     await context.send(f"{action}: '{cmd_name}'.")
-    title = f"User {action}"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Command Group" if isgroup else "Command":cmd_name,
-              "Content":cmd_text[:1021] + '...' if cmd_text and len(cmd_text) > 1021 else cmd_text,
-              "Attributes":"\n".join([f"{k}={v}" for k,v in attributes.items()]) if attributes else None}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Command Group" if isgroup else "Command":cmd_name,
+      "Content":cmd_text[:1021] + '...' if cmd_text and len(cmd_text) > 1021 else cmd_text,
+      "Attributes":"\n".join([f"{k}={v}" for k,v in attributes.items()]) if attributes else None
+    }
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action=action.lower(),
+      fields=fields, timestamp=context.message.created_at
+    )
 
 #This function is needed for the load_extension routine.
 def setup(bot):

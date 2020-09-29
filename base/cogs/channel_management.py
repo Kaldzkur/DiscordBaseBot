@@ -98,11 +98,14 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
         permissions[role] = overwrites
         targets.append(f"{role.mention}")
     await context.message.channel.edit(overwrites=permissions)
-    title = "Channel Closed"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Channel":f"{context.message.channel.mention}\n{context.message.channel}",
-              "Targets":"\n".join(targets) if targets else None}
-    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}",
+      "Targets":"\n".join(targets) if targets else None
+    }
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action="closed a channel",
+      fields=fields, timestamp=context.message.created_at
+    )
 
   @_channel.command(
     name="open",
@@ -145,11 +148,14 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
           permissions[role] = overwrites
         targets.append(f"{role.mention}")
     await context.message.channel.edit(overwrites=permissions)
-    title = "Channel Opened"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Channel":f"{context.message.channel.mention}\n{context.message.channel}",
-              "Targets":"\n".join(targets) if targets else None}
-    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}",
+      "Targets":"\n".join(targets) if targets else None
+    }
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action="opened a channel",
+      fields=fields, timestamp=context.message.created_at
+    )
 
   @_channel.command(
     name="mute",
@@ -181,11 +187,14 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
         permissions[role] = overwrites
         targets.append(f"{role.mention}")
     await context.message.channel.edit(overwrites=permissions)
-    title = "Channel Muted"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Channel":f"{context.message.channel.mention}\n{context.message.channel}",
-              "Targets":"\n".join(targets) if targets else None}
-    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}",
+      "Targets":"\n".join(targets) if targets else None
+    }
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action="muted a channel",
+      fields=fields, timestamp=context.message.created_at
+    )
     
   @_channel.group(
     name="monitor",
@@ -202,10 +211,11 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       return
     self.monitor[context.guild.id].append(context.message.channel.id)
     await context.send("Started monitoring this channel.")
-    title = "Start Monitoring Channel"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Channel":f"{context.message.channel.mention}\n{context.message.channel}"}
-    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {"Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}"}
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action="started channel monitoring",
+      fields=fields, timestamp=context.message.created_at
+    )
     
   @_channel_monitor.command(
     name="off",
@@ -220,10 +230,11 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       return
     self.monitor[context.guild.id].remove(context.message.channel.id)
     await context.send("Stopped monitoring this channel.")
-    title = "Stop Monitoring Channel"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Channel":f"{context.message.channel.mention}\n{context.message.channel}"}
-    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {"Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}"}
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action="stopped channel monitoring",
+      fields=fields, timestamp=context.message.created_at
+    )
 
 def setup(bot):
   bot.add_cog(ChannelManagementCog(bot))

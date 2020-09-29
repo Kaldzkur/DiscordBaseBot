@@ -101,8 +101,8 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     if nick is not None:
       await context.guild.me.edit(nick=nick)
       await self.bot.log_message(context.guild, "ADMIN_LOG", 
-        user=context.author, action="changed bot nickname", fields={"Name":nick},
-        timestamp=context.message.created_at
+        user=context.author, action="changed nickname", target=self.bot.user,
+        fields={"Name":nick}, timestamp=context.message.created_at
       )
     await context.send(f"```Nick: {context.guild.me.nick}```")
 
@@ -115,7 +115,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   async def _upgrade(self, context):
     await context.send(f"> Starting upgrade of codebase...")
     await self.bot.log_message(context.guild, "ADMIN_LOG",
-      user=context.author, action="upgraded the bot",
+      user=context.author, action="was upgraded", target=self.bot.user,
       timestamp=context.message.created_at
     )
     await self.bot.close()

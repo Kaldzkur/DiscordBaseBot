@@ -56,12 +56,15 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
     kwargs = {v[0]:v[1] for v in tmp}
     self.bot.db[context.guild.id].create_table(_name, _primary_keys, **kwargs)
     await context.send(self.bot.db[context.guild.id].info(_name))
-    title = "User created table"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Table":_name,
-              "Primary Keys":", ".join(_primary_keys.split(",")),
-              "Columns":", ".join([f"{arg[0]}:{arg[1]}" for arg in tmp])}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Table":_name,
+      "Primary Keys":", ".join(_primary_keys.split(",")),
+      "Columns":", ".join([f"{arg[0]}:{arg[1]}" for arg in tmp])
+    }
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="created table",
+      fields=fields, timestamp=context.message.created_at
+    )
 
   @_db.command(
     name="insert",
@@ -75,11 +78,14 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
   async def _insert_or_replace(self, context, _name, *args):
     combined_key = self.bot.db[context.guild.id].insert_or_update(_name, *args)
     await context.send(f"Updated entry {combined_key} in table {_name}.")
-    title = "User updated Entry"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Table":_name,
-              "Entry":combined_key}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Table":_name,
+      "Entry":combined_key
+    }
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="updated entry",
+      fields=fields, timestamp=context.message.created_at
+    )
 
   @_db.group(
     name="delete",
@@ -104,12 +110,14 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
     self.bot.db[context.guild.id].delete_row(_name, args)
     _key = " ".join(args)
     await context.send(f"Deleted row {_key} in table {_name}.")
-    title = "User deleted Entry"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Table":_name,
-              "Entry":_key}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
-
+    fields = {
+      "Table":_name,
+      "Entry":_key
+    }
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="deleted entry",
+      fields=fields, timestamp=context.message.created_at
+    )
 
   @_db_delete.command(
     name="table",
@@ -121,10 +129,11 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
   async def _db_drop_table(self, context, _name):
     self.bot.db[context.guild.id].delete_table(_name)
     await context.send(f"Deleted table {_name}.")
-    title = "User deleted table"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Table":_name}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="deleted table",
+      description=f"**Table:**\n{_name}", timestamp=context.message.created_at
+    )
+
 
   @_db.command(
     name="select",
@@ -147,11 +156,15 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
           i+=1
       else:
         await context.send(f"Result:\n```No entry```")
-      title = "User selected table"
-      fields = {"User":f"{context.author.mention}\n{context.author}",
-                "Table":_name,
-                "Result":f"{len(results) if results else 0} entries"}
-      await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+      fields = {
+        "Table":_name,
+        "Result":f"{len(results) if results else 0} entries"
+      }
+      await self.bot.log_message(context.guild, "ADMIN_LOG",
+        user=context.author, action="selected table",
+        fields=fields, timestamp=context.message.created_at
+      )
+
     else:
       result = self.bot.db[context.guild.id].select(_name, _values)
       if result:
@@ -161,12 +174,15 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
       else:
         await context.send(f"Result:\n```No entry```")
       result = str(result)
-      title = "User selected entry"
-      fields = {"User":f"{context.author.mention}\n{context.author}",
+      fields = {
                 "Table":_name,
                 "Key":_values,
-                "Result":result[:1021] + '...' if len(result) > 1021 else result}
-      await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+                "Result":result[:1021] + '...' if len(result) > 1021 else result
+      }
+      await self.bot.log_message(context.guild, "ADMIN_LOG",
+        user=context.author, action="selected entry",
+        fields=fields, timestamp=context.message.created_at
+      )
 
   @_db.command(
     name="query",
@@ -182,11 +198,15 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
     else:
       await context.send(f"Query result:```{result}```")
     result = str(result) if result else None
-    title = "User executed query"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Query":query,
-              "Result":result[:1021] + '...' if result and len(result) > 1021 else result}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Query":query,
+      "Result":result[:1021] + '...' if result and len(result) > 1021 else result
+    }
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="executed query",
+      fields=fields, timestamp=context.message.created_at
+    )
+
 
   @_db.command(
     name="info",
@@ -215,9 +235,11 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
       await context.send(f"```Completed```")
     except Exception as e:
       raise e
-    title = "User backed up database"
-    fields = {"User":f"{context.author.mention}\n{context.author}"}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="backed up database",
+      timestamp=context.message.created_at
+    )
+
   @_backup.error
   async def _backup_error(self, context, error):
     if isinstance(error, commands.CheckFailure):

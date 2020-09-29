@@ -76,14 +76,7 @@ class BaseBot(commands.Bot):
         content["colour"] = discord.Colour.from_rgb(54,57,63)
     if "timestamp" not in content:
       content["timestamp"] = datetime.utcnow()
-    if "fields" not in content:
-      content["fields"] = {}
-    embed = discord.Embed(
-      title=content["title"],
-      description=content["description"],
-      colour=content["colour"],
-      timestamp=content["timestamp"]
-    )
+    fields = {}
     if "user" in content:
       if "target" in content:
         embed.set_author(
@@ -91,15 +84,24 @@ class BaseBot(commands.Bot):
           icon_url=content["target"].avatar_url
         )
         embed.set_thumbnail(url=content["user"].avatar_url)
-        content["fields"]["User"] = f"{content['target'].mention}\n{content['target']}\nUID:{content['target'].id}"
-        content["fields"]["Action by:"] = f"{content['user'].mention}\n{content['user']}\nUID:{content['user'].id}"
+        fields["User"] = f"{content['target'].mention}\n{content['target']}\nUID:{content['target'].id}"
+        fields["Action by"] = f"{content['user'].mention}\n{content['user']}\nUID:{content['user'].id}"
       else:
         embed.set_author(
           name=f"{content['user'].display_name} {content['action']}",
           icon_url=content["user"].avatar_url
         )
-        content["fields"]["User"] = f"{content['user'].mention}\n{content['user']}\nUID:{content['user'].id}"
-    for key, value in content["fields"].items():
+        fields["User"] = f"{content['user'].mention}\n{content['user']}\nUID:{content['user'].id}"
+
+    embed = discord.Embed(
+      title=content["title"],
+      description=content["description"],
+      colour=content["colour"],
+      timestamp=content["timestamp"]
+    )
+    if fields in content:
+      fields.update(content["fields"])
+    for key, value in fields.items():
       if key and value:
         embed.add_field(name=f"{key}:", value=f"{value}", inline=False)
     embed.set_footer(text=log_type.replace("_", " "))
