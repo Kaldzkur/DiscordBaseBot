@@ -18,7 +18,6 @@ from base.modules.constants import games, animes
 class BaseBot(commands.Bot):
 
   def __init__(self, *arg, **kwargs):
-    self.main_server_id = kwargs.pop("server_id", None)
     super().__init__(*arg, **kwargs)
     self.intialized = {}
     self.db = {}
@@ -206,7 +205,6 @@ class BaseBot(commands.Bot):
     self.intialized[guild.id] = True
     print(f"({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) {self.user} has connected to: {guild.name} ({guild.id})")
     try:
-      #await self.log_admin(guild, title="Bot connected")
       await self.log_message(guild, "ADMIN_LOG", user=self.user, action="connected")
     except:
       pass
@@ -286,63 +284,29 @@ class BaseBot(commands.Bot):
   async def on_command_error(self, context, error):
     if hasattr(error, "original"):
       error = error.original
-    fields = {"User":f"{context.author.mention}\n{context.author}\nUID:{context.author.id}",
-              "Channel":f"{context.message.channel.mention}\nCID:{context.message.channel.id}",
-              "Command":f"{context.message.content}",
-             f"{error.__class__.__name__}":f"{error}"}
-    #await self.log_error(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "User":f"{context.author.mention}\n{context.author}\nUID:{context.author.id}",
+      "Channel":f"{context.message.channel.mention}\nCID:{context.message.channel.id}",
+      "Command":f"{context.message.content}",
+     f"{error.__class__.__name__}":f"{error}"
+    }
     await self.log_message(context.guild, "ERROR_LOG",
       title=f"A {error.__class__.__name__} occured",
-      fields=fields,
-      timestamp=context.message.created_at,
+      fields=fields, timestamp=context.message.created_at,
     )
 
   # the error handler for task, need to be called in try except block in each task
   async def on_task_error(self, task, error, guild):
     if hasattr(error, "original"):
       error = error.original
-    fields = {"Task":task,
-             f"{error.__class__.__name__}":f"{error}"}
-    #await self.log_error(guild, title=title, fields=fields)
+    fields = {
+      "Task":task,
+      f"{error.__class__.__name__}":f"{error}"
+    }
     await self.log_message(guild, "ERROR_LOG",
       title=f"A {error.__class__.__name__} occured",
       fields=fields,
     )
-
-#I do not think we need an on error handler!
-#Standard behaviour is to ignore exceptions and print them to stderr.
-#stderr is now printed to the log too
-#  async def on_error(self, event, *args, **kwargs):
-#    error = sys.exc_info()[1]
-#    if len(args) > 0:
-#      if isinstance(args[0], list):
-#        first_arg = args[0][0]
-#      else:
-#        first_arg = args[0]
-#      if isinstance(first_arg, discord.Guild):
-#        guild = first_arg
-#      else:
-#        if isinstance(first_arg, discord.Reaction):
-#          first_arg = first_arg.message
-#        if hasattr(first_arg, "guild"):
-#          guild = first_arg.guild
-#        elif hasattr(fist_arg, "guild_id"):
-#          guild = self.get_guild(fist_arg.guild_id)
-#        else:
-#          guild = None
-#    else:
-#      guild = None
-#    if guild is None:
-#      guild = self.main_server
-#    if guild is not None:
-#      title = f"A {error.__class__.__name__} occured"
-#      if hasattr(error, "original"):
-#        error = error.original
-#      fields = {"Event":event,
-#               f"{error.__class__.__name__}":f"{error}"}
-#      await self.log_error(guild, title=title, fields=fields)
-#    else:
-#      await super().on_error(event, *args, **kwargs)
 
   def create_tables(self, guild):
     if "user_warnings" not in self.db[guild.id]:
@@ -793,12 +757,6 @@ class BaseBot(commands.Bot):
     for k,db in self.db.items():
       db.close()
     print("The bot client is completely closed")
-    
-  @property
-  def main_server(self):
-    if not hasattr(self, "main_server_id"):
-      return None
-    return self.get_guild(self.main_server_id)
     
 def dynamic_prefix(bot, message):
   if hasattr(message, "guild"):
