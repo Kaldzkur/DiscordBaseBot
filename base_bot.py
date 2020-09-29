@@ -76,6 +76,12 @@ class BaseBot(commands.Bot):
         content["colour"] = discord.Colour.from_rgb(54,57,63)
     if "timestamp" not in content:
       content["timestamp"] = datetime.utcnow()
+    embed = discord.Embed(
+      title=content["title"],
+      description=content["description"],
+      colour=content["colour"],
+      timestamp=content["timestamp"]
+    )
     fields = {}
     if "user" in content:
       if "target" in content:
@@ -92,13 +98,6 @@ class BaseBot(commands.Bot):
           icon_url=content["user"].avatar_url
         )
         fields["User"] = f"{content['user'].mention}\n{content['user']}\nUID:{content['user'].id}"
-
-    embed = discord.Embed(
-      title=content["title"],
-      description=content["description"],
-      colour=content["colour"],
-      timestamp=content["timestamp"]
-    )
     if "fields" in content:
       fields.update(content["fields"])
     for key, value in fields.items():
