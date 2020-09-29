@@ -426,7 +426,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     if response:
       await context.guild.prune_members(days=days, compute_prune_count=False)
       await context.send(f"Removed {result} members from the server.")
-      await self.bot.log_message(context.guild, "ADMIN_LOG"
+      await self.bot.log_message(context.guild, "ADMIN_LOG",
         user=context.author, action="pruned inactive members", 
         description=f"**Inactive days:** {days}\n**Removed members:** {result}",
         timestamp=context.message.created_at
