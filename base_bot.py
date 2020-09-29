@@ -197,13 +197,12 @@ class BaseBot(commands.Bot):
     await self.create_roles(guild)
     await self.create_logs(guild)
     self.create_tables(guild)
-    time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     for cog in self.cogs.values():
       # you can initialze your cog during a guild join if you have init_guild() function for guild
       if callable(getattr(cog, "init_guild", None)):
         cog.init_guild(guild)
     self.intialized[guild.id] = True
-    print(f"({time}) {self.user} has connected to: {guild.name} ({guild.id})")
+    print(f"({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) {self.user} has connected to: {guild.name} ({guild.id})")
     try:
       #await self.log_admin(guild, title="Bot connected")
       await self.log_message(guild, "ADMIN_LOG", user=self.user, action="connected")
