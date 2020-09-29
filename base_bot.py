@@ -99,7 +99,7 @@ class BaseBot(commands.Bot):
       colour=content["colour"],
       timestamp=content["timestamp"]
     )
-    if fields in content:
+    if "fields" in content:
       fields.update(content["fields"])
     for key, value in fields.items():
       if key and value:
