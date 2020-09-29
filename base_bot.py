@@ -28,14 +28,14 @@ class BaseBot(commands.Bot):
     @self.check # add a global check to the bot
     def check_initialized(context):
       if context.guild.id not in context.bot.intialized or not context.bot.intialized[context.guild.id]:
-        raise commands.CheckFailure("Guild {context.guild.name} is not initialized")
+        raise commands.CheckFailure(f"Guild {context.guild.name} is not initialized")
       return True
 
   async def find_prefix(self, message):
     prefix = await self.get_prefix(message)
-    if type(prefix) == list:
+    if isinstance(prefix, (list, tuple)):
       for pre in prefix:
-        if message.startswith(pre):
+        if message.content.startswith(pre):
           return pre
       else:
         return None
@@ -199,13 +199,12 @@ class BaseBot(commands.Bot):
     await self.create_roles(guild)
     await self.create_logs(guild)
     self.create_tables(guild)
-    time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     for cog in self.cogs.values():
       # you can initialze your cog during a guild join if you have init_guild() function for guild
       if callable(getattr(cog, "init_guild", None)):
         cog.init_guild(guild)
     self.intialized[guild.id] = True
-    print(f"({time}) {self.user} has connected to: {guild.name} ({guild.id})")
+    print(f"({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) {self.user} has connected to: {guild.name} ({guild.id})")
     try:
       #await self.log_admin(guild, title="Bot connected")
       await self.log_message(guild, "ADMIN_LOG", user=self.user, action="connected")
@@ -802,12 +801,18 @@ class BaseBot(commands.Bot):
     return self.get_guild(self.main_server_id)
     
 def dynamic_prefix(bot, message):
-  if message.type != discord.MessageType.default:
-    return
-  if hasattr(message, "guild") and message.guild:
-    return bot.get_guild_prefix(message.guild)
+  if hasattr(message, "guild"):
+    prefix_list = []
+    if message.guild.id in bot.intialized and bot.intialized[message.guild.id]:
+      prefix_list.append(bot.get_guild_prefix(message.guild))
+      role = bot.get_bot_role(message.guild)
+      if role:
+        prefix_list.append(f"{role.mention} ")
+    prefix_list += [f"{bot.user.mention} ", f"<@!{bot.user.id}> "]
   else: #in DMs the bot can respond to prefix-less messages
-    return "?", ""
+    prefix_list = ["?", ""]
+  return prefix_list
+  
 
 if __name__ == "__main__":
   import os
