@@ -201,7 +201,7 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
       "fields":fields,
     }
     if member:
-      content["user"] = context.author,
+      content["user"] = context.author
       content["action"] = f"was forced in a {prefix[0:-1]}"
       content["target"] = user
     await self.bot.log_message(context.guild, "MOD_LOG", **content)

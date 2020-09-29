@@ -44,10 +44,10 @@ class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
   async def _set_setting(self, context, key, *, value):
     value = await self.bot.set_setting(context.guild, key, value, context)
     await context.send(f"```{key} has been set to {value}.```")
-    title = "User modified a setting"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              key:value}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="modified a setting",
+      description=f"{key}:\n{value", timestamp=context.message.created_at
+    )
 
   @_settings.command(
     name="get",
@@ -59,10 +59,10 @@ class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
   async def _get_setting(self, context, key):
     value = self.bot.get_setting(context.guild, key)
     await context.send(f"```{key}: {value}```")
-    title = "User fetched a setting"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              key:value}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="fetched a setting",
+      description=f"{key}:\n{value}", timestamp=context.message.created_at
+    )
 
   @_settings.command(
     name="add",
@@ -74,10 +74,11 @@ class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
   async def _add_setting(self, context, key, *, value):
     self.bot.add_setting(context.guild, key, value)
     await context.send(f"```{key} has been added to the settings.```")
-    title = "User added a setting"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              key:value}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="added a setting",
+      description=f"{key}:\n{value}", timestamp=context.message.created_at
+    )
+
 
   @_settings.command(
     name="describe",
@@ -90,10 +91,11 @@ class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
   async def _add_description(self, context, key, *, value):
     self.bot.add_setting_description(context.guild, key, value)
     await context.send(f"```{key} has been described.```")
-    title = "User described a setting"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              key:value}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="described a setting",
+      description=f"{key}:\n{value}", timestamp=context.message.created_at
+    )
+
 
 
   @_settings.command(
@@ -112,10 +114,10 @@ class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
         return
     self.bot.rm_setting(context.guild, key)
     await context.send(f"```{key} has been removed from the settings.```")
-    title = "User removed a setting"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Setting":key}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="removed a setting",
+      description=f"Setting:\n{key}", timestamp=context.message.created_at
+    )
 
   @_settings.command(
     name="info",
@@ -135,9 +137,11 @@ class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
   async def _reset_setting(self, context):
     await self.bot.reset_settings(context)
     await context.send(f"```All settings are reset to default.```")
-    title = "User reset all settings"
-    fields = {"User":f"{context.author.mention}\n{context.author}"}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="reset settings to default values",
+      timestamp=context.message.created_at
+    )
+
 
 
 #This function is needed for the load_extension routine.

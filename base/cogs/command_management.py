@@ -170,10 +170,10 @@ class CommandCog(commands.Cog, name="Command Management"):
       return
     self.bot.db[context.guild.id].query(f'UPDATE user_commands SET lock=1 WHERE cmdname="{cmd_name}"')
     await context.send(f"Command '{cmd_name}' has been locked.")
-    title = f"User Locked a Command"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Command Group" if cmd["isgroup"] else "Command":cmd_name}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="locked a command",
+      description=f"Command:\n {cmd_name}", timestamp=context.message.created_at
+    )
       
   @_cmd.command(
     name="unlock",
@@ -191,7 +191,11 @@ class CommandCog(commands.Cog, name="Command Management"):
     title = f"User Unlocked a Command"
     fields = {"User":f"{context.author.mention}\n{context.author}",
               "Command Group" if cmd["isgroup"] else "Command":cmd_name}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="unlocked a command",
+      description=f"Command:\n {cmd_name}", timestamp=context.message.created_at
+    )
+
       
   @_cmd.command(
     name="global",
@@ -209,10 +213,10 @@ class CommandCog(commands.Cog, name="Command Management"):
     set_new_cmd(None, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], cmd["perm"])
     self.bot.db[context.guild.id].query(f'UPDATE user_commands SET glob=1 WHERE cmdname="{cmd_name}"')
     await context.send(f"Command '{cmd_name}' has become global.")
-    title = f"User Gobalized a Command"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Command Group" if cmd["isgroup"] else "Command":cmd_name}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="made a command global",
+      description=f"Command:\n {cmd_name}", timestamp=context.message.created_at
+    )
     
   @_cmd.command(
     name="unglobal",
@@ -230,10 +234,10 @@ class CommandCog(commands.Cog, name="Command Management"):
     set_new_cmd(context.guild, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], cmd["perm"])
     self.bot.db[context.guild.id].query(f'UPDATE user_commands SET glob=0 WHERE cmdname="{cmd_name}"')
     await context.send(f"Command '{cmd_name}' has become server-specific.")
-    title = f"User Ungobalized a Command"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Command Group" if cmd["isgroup"] else "Command":cmd_name}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="made a command local",
+      description=f"Command:\n {cmd_name}", timestamp=context.message.created_at
+    )
     
   @_cmd.command(
     name="perm",
@@ -257,11 +261,11 @@ class CommandCog(commands.Cog, name="Command Management"):
     set_new_cmd(guild, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], permission)
     self.bot.db[context.guild.id].query(f'UPDATE user_commands SET perm={permission} WHERE cmdname="{cmd_name}"')
     await context.send(f"Updated command '{cmd_name}' permission.")
-    title = f"User Update a Command Permission"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Command Group" if cmd["isgroup"] else "Command":cmd_name,
-              "Permission Lv": permission}
-    await self.bot.log_admin(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {"Permission Lv": permission}
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="updated commands' permission",
+      description=f"Command:\n {cmd_name}", fields=fields, timestamp=context.message.created_at
+    )
 
   async def after_cmd_update(self, context, cmd_name, cmd_text, attributes, isgroup, action, glob=False, perm=0):
     self.bot.db[context.guild.id].insert_or_update("user_commands", cmd_name, cmd_text, json.dumps(attributes), int(isgroup), 0, int(glob), perm)
@@ -271,7 +275,7 @@ class CommandCog(commands.Cog, name="Command Management"):
   async def log_cmd_update(self, context, cmd_name, cmd_text, attributes, isgroup, action):
     await context.send(f"{action}: '{cmd_name}'.")
     fields = {
-      "Command Group" if isgroup else "Command":cmd_name,
+      "Command":cmd_name,
       "Content":cmd_text[:1021] + '...' if cmd_text and len(cmd_text) > 1021 else cmd_text,
       "Attributes":"\n".join([f"{k}={v}" for k,v in attributes.items()]) if attributes else None
     }

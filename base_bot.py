@@ -90,14 +90,15 @@ class BaseBot(commands.Bot):
           icon_url=content["target"].avatar_url
         )
         embed.set_thumbnail(url=content["user"].avatar_url)
-        fields["User"] = f"{content['target'].mention}\n{content['target']}\nUID:{content['target'].id}"
-        fields["Action by"] = f"{content['user'].mention}\n{content['user']}\nUID:{content['user'].id}"
+        fields["User"] = f"{content['target'].mention}\n{content['target']}\nUID: {content['target'].id}"
+        fields["Action by"] = f"{content['user'].mention}\n{content['user']}\nUID: {content['user'].id}"
       else:
         embed.set_author(
           name=f"{content['user'].display_name} {content['action']}",
           icon_url=content["user"].avatar_url
         )
-        fields["User"] = f"{content['user'].mention}\n{content['user']}\nUID:{content['user'].id}"
+        embed.set_thumbnail(url=content["user"].avatar_url)
+        fields["User"] = f"{content['user'].mention}\n{content['user']}\nUID: {content['user'].id}"
     if "fields" in content:
       fields.update(content["fields"])
     for key, value in fields.items():
