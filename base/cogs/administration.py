@@ -161,9 +161,13 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     files = os.listdir(path)
     paths = [os.path.join(path, name) for name in files]
     log_file = max(paths, key=os.path.getctime)
-    with open(log_file, mode="r") as f:
-      content = f.read()
-    await context.send(f"```{content}```")
+    file_size = os.path.getsize(log_file)
+    if file_size < 2000-6:
+      with open(log_file, mode="r") as f:
+        content = f.read()
+      await context.send(f"```{content}```")
+    else: # too large to fit in one message, send a file
+      await context.send(file=discord.File(log_file))
     await self.bot.log_message(context.guild, "ADMIN_LOG",
       user=context.author, action="requested the log file",
       timestamp=context.message.created_at
