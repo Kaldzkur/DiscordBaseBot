@@ -4,6 +4,7 @@ import discord
 import typing
 from discord.ext import commands
 from base.modules.access_checks import has_admin_role
+from base.modules.constants import LOG_PATH as path
 
 class AdminCog(commands.Cog, name="Administration Commands"):
   def __init__(self, bot):
@@ -150,6 +151,23 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     )
     await self.bot.close()
     os.system("sh shutdown.sh")
+
+  @commands.command(
+    name="log",
+    brief="Gets the log file",
+  )
+  @commands.is_owner()
+  async def _log(self, context):
+    files = os.listdir(path)
+    paths = [os.path.join(path, name) for name in files]
+    log_file = max(paths, key=os.path.getctime)
+    with open(log_file, mode="r") as f:
+      content = f.read()
+    await context.send(f"```{content}```")
+    await self.bot.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action="requested the log file",
+      timestamp=context.message.created_at
+    )
 
   @commands.command(
     name="id",

@@ -1,5 +1,6 @@
 CACHE_PATH = "./cache"
 DB_PATH = "./db"
+LOG_PATH = "./log"
 
 empty_space = "\u200b"
 
