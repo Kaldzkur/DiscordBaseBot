@@ -163,7 +163,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     log_file = os.path.join(path, files[-1])
     with open(log_file, mode="r") as f:
       content = []
-      for i, line in enumerate(reverse(f)):
+      for i, line in enumerate(reversed(f)):
         if not (start_line <= i < start_line + num_lines):
           break
         content.append(line)
