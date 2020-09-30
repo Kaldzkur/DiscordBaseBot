@@ -178,7 +178,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     brief="Gets the log file",
   )
   @commands.is_owner()
-  async def _log(self, context, start_line:typing.Optional[int]=0, num_lines:typing.Optional[int]=10):
+  async def _log_file(self, context, start_line:typing.Optional[int]=0, num_lines:typing.Optional[int]=10):
     log_file = os.path.join(path, os.listdir(path)[-1])
     await context.send(file=discord.File(log_file))
     await self.bot.log_message(context.guild, "ADMIN_LOG",
