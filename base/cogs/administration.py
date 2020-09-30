@@ -152,22 +152,35 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     await self.bot.close()
     os.system("sh shutdown.sh")
 
-  @commands.command(
+  @commands.group(
     name="log",
+    brief="Prints a part of the log file",
+    invoke_without_command=True,
+  )
+  @commands.is_owner()
+  async def _log(self, context, start_line:typing.Optional[int]=0, num_lines:typing.Optional[int]=10):
+    files = os.listdir(path)
+    log_file = os.path.join(path, files[-1])
+    with open(log_file, mode="r") as f:
+      content = []
+      for i, line in enumerate(reverse(f)):
+        if not (start_line <= i < start_line + num_lines):
+          break
+        content.append(line)
+      await context.send(f"```{"".join(content)}```")
+      await self.bot.log_message(context.guild, "ADMIN_LOG",
+        user=context.author, action=f"printed {num_lines} from the log",
+        timestamp=context.message.created_at
+      )
+
+  @_log.command(
+    name="file",
     brief="Gets the log file",
   )
   @commands.is_owner()
-  async def _log(self, context):
-    files = os.listdir(path)
-    paths = [os.path.join(path, name) for name in files]
-    log_file = max(paths, key=os.path.getctime)
-    file_size = os.path.getsize(log_file)
-    if file_size < 2000-6:
-      with open(log_file, mode="r") as f:
-        content = f.read()
-      await context.send(f"```{content}```")
-    else: # too large to fit in one message, send a file
-      await context.send(file=discord.File(log_file))
+  async def _log(self, context, start_line:typing.Optional[int]=0, num_lines:typing.Optional[int]=10):
+    log_file = os.path.join(path, os.listdir(path)[-1])
+    await context.send(file=discord.File(log_file))
     await self.bot.log_message(context.guild, "ADMIN_LOG",
       user=context.author, action="requested the log file",
       timestamp=context.message.created_at
