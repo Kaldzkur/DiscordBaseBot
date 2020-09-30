@@ -167,7 +167,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
         if not (start_line <= i < start_line + num_lines):
           break
         content.append(line)
-      await context.send(f"```{"".join(content)}```")
+      await context.send(f"```{''.join(content)}```")
       await self.bot.log_message(context.guild, "ADMIN_LOG",
         user=context.author, action=f"printed {num_lines} from the log",
         timestamp=context.message.created_at
