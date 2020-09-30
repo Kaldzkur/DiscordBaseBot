@@ -164,9 +164,12 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     with open(log_file, mode="r") as f:
       content = []
       for i, line in enumerate(reversed(f.readlines())):
-        if not (start_line <= i < start_line + num_lines):
+        if start_line <= i < start_line + num_lines:
+          content.append(line)
+        elif i < start_line + num_lines:
+          continue
+        else:
           break
-        content.append(line)
       await context.send(f"```{''.join(content)}```")
       await self.bot.log_message(context.guild, "ADMIN_LOG",
         user=context.author, action=f"printed {num_lines} from the log",
