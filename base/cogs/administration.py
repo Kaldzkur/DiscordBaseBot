@@ -165,14 +165,14 @@ class AdminCog(commands.Cog, name="Administration Commands"):
       content = []
       for i, line in enumerate(reversed(f.readlines())):
         if start_line <= i < start_line + num_lines:
-          content.append(line)
+          content.append(f"{i}: {line}")
         elif i < start_line + num_lines:
           continue
         else:
           break
       await context.send(f"```{''.join(content)}```")
       await self.bot.log_message(context.guild, "ADMIN_LOG",
-        user=context.author, action=f"printed {num_lines} from the log",
+        user=context.author, action=f"printed {i - start_line} line(s) from the log",
         timestamp=context.message.created_at
       )
 
