@@ -275,10 +275,9 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
     try:
       await user.create_dm()
       await user.dm_channel.send(
-        f"Hey {user.mention}, the {ch_type} in the {channel.guild.name} Discord is closed now. Here is your conversation as a .txt file [{msg_count} message(s)]:"
+        f"Hey {user.mention}, the {ch_type} in the {channel.guild.name} Discord is closed now. Here is your conversation as a .txt file [{msg_count} message(s)]:",
+        file=discord.File(logfile)
       )
-      with logfile.open() as modmail:
-        await user.dm_channel.send(file=discord.File(modmail))
       #os.remove(logfile)
     except discord.Forbidden:
       pass #DM could not be sent
