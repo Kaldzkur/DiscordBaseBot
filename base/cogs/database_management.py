@@ -245,7 +245,7 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
     if isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to backup data.")
     elif isinstance(error, commands.MaxConcurrencyReached):
-      await context.send(f"Sorry {context.author.mention}, but only {error.number} user(s) can execute `{context.prefix}{context.command.qualified_name}` at the same time!")
+      await context.send(f"Sorry {context.author.mention}, but only {error.number} user(s) can execute `{context.command.qualified_name}` at the same time!")
     else:
       await context.send(f"Sorry {context.author.mention}, something unexpected happened while backing up data.")
 

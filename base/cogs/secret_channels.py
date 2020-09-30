@@ -45,7 +45,7 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
     elif isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to execute that command!")
     elif isinstance(error, commands.UserInputError):
-      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.prefix}{context.command.qualified_name}`.")
+      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.command.qualified_name}`.")
     else:
       await context.send(f"Sorry {context.author.mention}, something unexpected happened while executing that command.")
       
@@ -183,7 +183,7 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
     msg = [
       f"Hey {user.mention}! Here is your private, temporary modmail channel. ",
       f"It's a good time to give additional information regarding your request. One of the {mods} will get back to you as soon as someone is available. ",
-      f"Type `{context.prefix}modmail close` to close the channel."
+      f"Type `{self.bot.get_guild_prefix(context.guild)}modmail close` to close the channel."
     ]
     if len(reason) > 0:
       msg.append(f"\n```{reason}```")

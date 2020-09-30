@@ -104,7 +104,7 @@ def make_user_command(guild, cmd_name, cmd_text, permission=0, **attributes):
     if isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to use this command in this server.")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, IndexError):
-      await context.send(f"{context.author.mention} you do not have enough arguments to the command `{context.prefix}{context.command.qualified_name}`.")
+      await context.send(f"{context.author.mention} you do not have enough arguments passed to the command `{context.command.qualified_name}`.")
     else:
       await context.send(f"Sorry {context.author.mention}, something unexpected happened while excuting this command.")
   _wrapper_user_cmd.update(**attributes)
@@ -139,7 +139,7 @@ def make_user_group(guild, cmd_name, cmd_text, permission=0, **attributes):
     if isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to use this command in this server.")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, IndexError):
-      await context.send(f"{context.author.mention} you do not have enough arguments to the command `{context.prefix}{context.command.qualified_name}`.")
+      await context.send(f"{context.author.mention} you do not have enough arguments passed to the command `{context.command.qualified_name}`.")
     else:
       await context.send(f"Sorry {context.author.mention}, something unexpected happened while excuting this command.")
   _wrapper_user_cmd.update(**attributes)

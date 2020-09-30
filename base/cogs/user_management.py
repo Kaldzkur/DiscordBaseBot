@@ -83,11 +83,11 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     elif isinstance(error, commands.BotMissingPermissions):
       await context.send(f"Sorry {context.author.mention}, but I do not have permission to execute that command!")
     elif isinstance(error, commands.UserInputError):
-      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.prefix}{context.command.qualified_name}`.")
+      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.command.qualified_name}`.")
     elif isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to execute that command!")
     elif isinstance(error, commands.MaxConcurrencyReached):
-      await context.send(f"Sorry {context.author.mention}, but only {error.number} user(s) can execute `{context.prefix}{context.command.qualified_name}` at the same time!")
+      await context.send(f"Sorry {context.author.mention}, but only {error.number} user(s) can execute `{context.command.qualified_name}` at the same time!")
     else:
       await context.send(f"Sorry {context.author.mention}, something unexpected happened while executing that command.")
       
@@ -657,7 +657,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       await context.send(f"Sorry {context.author.mention}, but I could not find the specified user(s).")
       return
     if not(0 <= days <= 7):
-      await context.send(f"Sorry {context.author.mention}, `days` needs to be between 0 and 7. Refer to `{context.prefix}help ban` for more information.")
+      await context.send(f"Sorry {context.author.mention}, `days` needs to be between 0 and 7. Refer to `help ban` for more information.")
       return
     for user in users:
       if user.id == self.bot.user.id:

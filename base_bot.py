@@ -759,7 +759,7 @@ class BaseBot(commands.Bot):
     print("The bot client is completely closed")
     
 def dynamic_prefix(bot, message):
-  if hasattr(message, "guild"):
+  if message.guild:
     prefix_list = []
     if message.guild.id in bot.intialized and bot.intialized[message.guild.id]:
       prefix_list.append(bot.get_guild_prefix(message.guild))

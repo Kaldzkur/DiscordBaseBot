@@ -257,7 +257,8 @@ class InteractiveHelpGroup(InteractiveMessage):
   '''
 
   async def get_embed(self):
-    description = await get_cmd_help_string(self.group, self.context.prefix, self.page_number, help_cmd=self.help_cmd)
+    prefix = self.context.bot.get_guild_prefix(self.context.guild) if self.context.guild else self.context.prefix
+    description = await get_cmd_help_string(self.group, prefix, self.page_number, help_cmd=self.help_cmd)
     if isinstance(self.group, commands.Group):
       embed = discord.Embed(title=f"Group `{self.group.qualified_name}` Help", description=description)
     else:

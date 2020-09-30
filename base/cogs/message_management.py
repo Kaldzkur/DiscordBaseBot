@@ -59,7 +59,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     elif isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to manage messages in the specific channel!")
     elif isinstance(error, commands.UserInputError):
-      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.prefix}{context.command.qualified_name}`.")
+      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.command.qualified_name}`.")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, discord.Forbidden):
       await context.send(f"Sorry {context.author.mention}, but I do not have permission to post in the specified channel.")
     else:

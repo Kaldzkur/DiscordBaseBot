@@ -14,9 +14,9 @@ class CommandCog(commands.Cog, name="Command Management"):
       # This prevents any commands with local handlers being handled here.
       return
     if isinstance(error, commands.CheckFailure):
-      await context.send(f"Sorry {context.author.mention}, but you do not have permission to execute '{context.prefix}{context.command.qualified_name}'.")
+      await context.send(f"Sorry {context.author.mention}, but you do not have permission to execute '{context.command.qualified_name}'.")
     elif isinstance(error, commands.UserInputError):
-      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.prefix}{context.command.qualified_name}`:\n{error}")
+      await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.command.qualified_name}`:\n{error}")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, commands.CommandRegistrationError):
       await context.send(f"Sorry {context.author.mention}, but your operation failed:\n{error.original}")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, (NameError, LookupError)):
