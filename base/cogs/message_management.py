@@ -573,7 +573,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
           else:
             fields["Content"] = message_schedule['content']
           if message_schedule['embed']:
-            fields["Embed size":len(discord.Embed.from_dict(message_schedule['embed']))
+            fields["Embed size"] = len(discord.Embed.from_dict(message_schedule['embed']))
           if file_num:
             fields["Files"] = f"{file_num} file(s)"
           await self.bot.log_message(context.guild, "MOD_LOG",
