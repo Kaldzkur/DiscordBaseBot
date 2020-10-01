@@ -486,7 +486,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     self.scheduler[context.guild.id].append(message_schedule)
     message_schedule.set_timer(context.guild, self.bot, self.scheduler[context.guild.id])
     fields = {
-      "Channel":f"{channel.mention}\nCID:{channel.id}",
+      "Channel":f"{channel.mention}\nCID: {channel.id}",
       "Content":(text[:1021] + '...') if text and len(text) > 1021 else text,
       "Embed size":len(discord.Embed.from_dict(message_schedule['embed'])) if message_schedule['embed'] else None,
       "Files":f"{len(message_schedule['files'])} file(s)" if message_schedule["files"] else None,
