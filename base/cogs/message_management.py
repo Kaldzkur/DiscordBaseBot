@@ -553,7 +553,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       return
     msg_count = 0
     for message_schedule in self.scheduler[context.guild.id]:
-      if (member is None or message_schedule["author"] == member.id) and (channel is None or message_schedule["channel"] == channels.id):
+      if (member is None or message_schedule["author"] == member.id) and (channel is None or message_schedule["channel"] == channel.id):
         msg_count += 1
         if msg_count == num:
           message_schedule.cancel()
@@ -563,13 +563,19 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
             member = context.guild.get_member(message_schedule["author"])
           if channel is None:
             channel = context.guild.get_channel(message_schedule['channel'])
-          fields = {
-            "Author":f"{member.mention}\n{member}\nUID: {member.id}" if member else 'Unknown Member',
-            "Channel":f"{channel.mention}\nCID: {channel.id}" if channel else 'Unknown Channel',
-            "Content":(message_schedule['content'][:1021] + '...') if message_schedule['content'] and len(message_schedule['content']) > 1021 else message_schedule['content'],
-            "Embed size":len(discord.Embed.from_dict(message_schedule['embed'])) if message_schedule['embed'] else None,
-            "Files":f"{file_num} file(s)" if file_num else None
-          }
+          fields = {}
+          if member:
+            fields["Author"] = f"{member.mention}\n{member}\nUID: {member.id}"
+          if channel:
+            fields["Channel"] = f"{channel.mention}\nCID: {channel.id}"
+          if message_schedule['content'] and len(message_schedule['content']) > 1021:
+            fields["Content"] = message_schedule['content'][:1021] + '...'
+          else:
+            fields["Content"] = message_schedule['content']
+          if message_schedule['embed']:
+            fields["Embed size":len(discord.Embed.from_dict(message_schedule['embed']))
+          if file_num:
+            fields["Files"] = f"{file_num} file(s)"
           await self.bot.log_message(context.guild, "MOD_LOG",
             user=context.author, action="cancelled a scheduled message",
             fields=fields, timestamp=context.message.created_at
