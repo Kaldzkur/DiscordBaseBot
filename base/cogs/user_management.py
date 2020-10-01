@@ -672,7 +672,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       await context.guild.ban(user, reason=reason, delete_message_days=days)
       await context.send(f"```{user} has been banned from the server.```")
       await self.bot.log_message(context.guild, "MOD_LOG",
-        user=context.author, action="has been banned", target=member,
+        user=context.author, action="has been banned", target=user,
         description=f"Reason:\n{reason}", timestamp=context.message.created_at
       )
 
