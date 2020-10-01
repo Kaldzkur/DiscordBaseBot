@@ -65,6 +65,20 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     else:
       await context.send(f"Sorry {context.author.mention}, but something unexpected happened...")
 
+  async def on_message_delete(self, message):
+    if message.guild:
+      fields ={
+        "Channel":f"{message.channel.mention}\nCID: {message.channel.id}",
+        "Message":f"MID: {message.id}\nContent: {message.content}\n",
+        "Sent at":f"{message.created_at}",
+      }
+      if message.edited_at:
+        fields["Last edit"] = f"{message.edited_at}"
+      self.bot.log_message(message.guild, "AUDIT_LOG",
+        user=message.author, action=" message was deleted",
+        fields=fields,
+      )
+
   @commands.group(
     name="delete",
     brief="Deletes messages",
@@ -98,12 +112,15 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
           await self.cache_message(message, max_cache)
           msg_list.append(message)
     await self.smart_delete_messages(channel, msg_list)
-    title = f"Messages have been deleted"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Author(s)":"\n".join([f"{member.mention} {member}" for member in members]) if members else None,
-              "Channel":channel.mention,
-              "Deleted":f"{len(msg_list)} message(s)"}
-    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Author(s)":"\n".join([f"{member.mention}\n{member}\nUID: {member.id}" for member in members]) if members else None,
+      "Channel":f"{channel.mention}\nCID: {channel.id}",
+      "Deleted":f"{len(msg_list)} message(s)"
+    }
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action="deleted messages",
+      fields=fields, timestamp=context.message.created_at
+    )
     if len(msg_list) == 0:
       await send_temp_message(context, "Could not delete message(s).", 10)
     await context.message.delete()
@@ -165,13 +182,15 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         restored += 1
       except:
         pass
-    title = f"Messages have been restored"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Author(s)":"\n".join([f"{member.mention} {member}" for member in members]) if members else None,
-              "From Channel(s)":"\n".join([channel.mention for channel in channels]) if channels else None,
-              "To Channel":context.channel.mention,
-              "Restored":f"{restored} message(s)"}
-    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Author(s)":"\n".join([f"{member.mention}\n{member}\nUID: {member.id}" for member in members]) if members else None,
+      "From Channel(s)":"\n".join([f"{channel.mention}\nCID: {channel.id}" for channel in channels]) if channels else None,
+      "To Channel":f"{context.channel.mention}\nCID: {channel.id}",
+    }
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action=f"restored {restored} message(s)",
+      title=title, fields=fields, timestamp=context.message.created_at
+    )
     if restored == 0:
       await send_temp_message(context, "Could not restore message(s).", 10)
     await context.message.delete()
@@ -234,13 +253,16 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       await context.send_help("announce")
       return
     await channel.send(content=announcement, embed=embed_post, files=files)
-    title = f"An announcement has been made"
-    fields = {"User":f"{context.author.mention}\n{context.author}",
-              "Channel":channel.mention,
-              "Content":(announcement[:1021] + '...') if announcement and len(announcement) > 1021 else announcement,
-              "Embed size":len(embed_post) if embed_post else None,
-              "Files":f"{len(files)} file(s)" if files else None}
-    await self.bot.log_mod(context.guild, title=title, fields=fields, timestamp=context.message.created_at)
+    fields = {
+      "Channel":f"{channel.mention}\nCID: {channel.id}",
+      "Content":(announcement[:1021] + '...') if announcement and len(announcement) > 1021 else announcement,
+      "Embed size":len(embed_post) if embed_post else None,
+      "Files":f"{len(files)} file(s)" if files else None
+    }
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action="made an announcement",
+      fields=fields, timestamp=context.message.created_at
+    )
     await context.message.delete()
 
   @commands.command(
