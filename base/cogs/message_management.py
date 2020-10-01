@@ -493,7 +493,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       "Time":schedule.strftime('%Y-%m-%d %H:%M:%S %z')
     }
     await self.bot.log_message(context.guild, "MOD_LOG",
-      user=context.author, action="scheduled a message"
+      user=context.author, action="scheduled a message",
       fields=fields, timestamp=context.message.created_at
     )
     await send_temp_message(context, f"{context.author.mention} You have scheduled a message at {schedule.strftime('%Y-%m-%d %H:%M:%S %z')}.", 10)
