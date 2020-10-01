@@ -204,11 +204,11 @@ class MessageSchedule(MessageCache):
         fields["Channel"] = f"{channel.mention}\nCID: {channel.id}"
       if text and len(text) > 1021:
         fields["Content"] = text[:1021] + '...'
-       else:
-         fields["Content"] = text
-       if embed_post:
+      else:
+        fields["Content"] = text
+      if embed_post:
         fields["Embed size"] = len(embed_post)
-       if files:
+      if files:
         fields["Files"] = f"{len(files)} file(s)"
       await bot.log_message(guild, "MOD_LOG", user=bot.user, action="sent a scheduled message", fields=fields)
     except:
