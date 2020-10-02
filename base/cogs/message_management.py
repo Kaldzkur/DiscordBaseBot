@@ -81,7 +81,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     else:
       print(f"MID: {message.id} deleted")
 
-  async on_raw_message_delete(self, payload):
+  async def on_raw_message_delete(self, payload):
     print("RAW_MSG_EVENT")
     if payload.guild_id:
       guild = discord.utils.get(self.bot.guilds, id=payload.guild_id)
