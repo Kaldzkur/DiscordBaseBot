@@ -96,6 +96,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         for name in attachments:
           with open(name, "rb") as f:
             await self.bot.get_log(message.guild, "audit-log").send(content=None, file=discord.File(f, filename=name))
+          os.remove(name) #delete file
 
     else:
       print(f"MID: {message.id} deleted")
