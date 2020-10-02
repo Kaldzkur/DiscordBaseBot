@@ -75,7 +75,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       }
       if message.edited_at:
         fields["Last edit"] = f"{message.edited_at}"
-      self.bot.log_message(message.guild, "AUDIT_LOG",
+      await self.bot.log_message(message.guild, "AUDIT_LOG",
         user=message.author, action=" message was deleted",
         fields=fields,
       )
@@ -96,7 +96,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
             fields["Attachments"] = len(msg.attachments)
           if len(msg.embeds) > 0:
             fields["Embeds"] = len(msg.embeds)
-          self.bot.log_message(guild, "AUDIT_LOG",
+          await self.bot.log_message(guild, "AUDIT_LOG",
             user=msg.author, action="message was deleted",
             fields=fields
           )            
