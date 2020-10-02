@@ -81,6 +81,25 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     else:
       print(f"MID: {message.id} deleted")
 
+  async on_raw_message_delete(self, payload):
+    print("RAW_MSG_EVENT")
+    if payload.guild_id:
+      guild = discord.utils.get(self.bot.guilds, id=payload.guild_id)
+      channel = discord.utils.get(guild.text_channels, id=payload.channel_id)
+      if len(payload.cached_messages) > 0:
+        for msg in payload.cached_messages:
+          fields = {}
+          if 1500 > len(msg.content) > 0:
+            fields["Content"] = msg.content
+          if len(msg.attachments) > 0:
+            fields["Attachments"] = len(msg.attachments)
+          if len(msg.embeds) > 0:
+            fields["Embeds"] = len(msg.embeds)
+          self.bot.log_message(guild, "AUDIT_LOG",
+            user=msg.author, action="message was deleted",
+            fields=fields
+          )            
+
   @commands.group(
     name="delete",
     brief="Deletes messages",
