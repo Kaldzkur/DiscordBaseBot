@@ -109,12 +109,9 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     if payload.guild_id:
       guild = discord.utils.get(self.bot.guilds, id=payload.guild_id)
       channel = discord.utils.get(guild.text_channels, id=payload.channel_id)
-        msg = payload.cached_message
-      else:
-        msg = await channel.fetch_message(payload.message_id)
       fields = {
         "Channel":f"{channel.mention}\nCID: {channel.id}",
-        "Message":f"MID: {msg.id}",
+        "Message":f"MID: {payload.message_id}",
       }
       await self.bot.log_message(guild, "AUDIT_LOG",
         title="A message was deleted", fields=fields
