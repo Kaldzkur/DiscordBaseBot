@@ -95,14 +95,15 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         fields=fields,
       )
       audit_log = self.bot.get_log(message.guild, "audit-log")
+      tmp = files[0:10]
       if len(message.embeds) > 0:
-        await audit_log.send(content=message.content, embed=message.embeds[0])
+        await audit_log.send(content=message.content, embed=message.embeds[0], files=tmp)
         for embed in message.embeds[1:]:
           await audit_log.send(content=None, embed=embed)
       elif message.content:
-        await audit_log.send(content=message.content)
-      if files:
-        for i in range(0, len(files), 10):
+        await audit_log.send(content=message.content, files=tmp)
+      if len(files) > 10:
+        for i in range(10, len(files), 10):
           await audit_log.send(content=None, files=files[i:i+10])
     else:
       print(f"MID: {message.id} deleted")
