@@ -101,7 +101,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       if payload.cached_message:
         msg = payload.cached_message
       else:
-        await msg = channel.fetch_message(payload.message_id)
+        msg = await channel.fetch_message(payload.message_id)
       fields = {
         "Author":f"{msg.author.mention}\n{msg.author}\nUID: {msg.author.id}",
         "Channel":f"{channel.mention}\nCID: {channel.id}",
