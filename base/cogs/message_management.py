@@ -96,19 +96,15 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         title="A message was deleted", description="The message is visible below this entry",
         fields=fields,
       )
-      audit_log = self.bot.get_log(message.guild, "message-log")
-      tmp = files[0:10]
+      message_log = self.bot.get_log(message.guild, "message-log")
       if len(message.embeds) > 0:
-        await audit_log.send(content=message.content, embed=message.embeds[0], files=tmp)
+        await message_log.send(content=message.content, embed=message.embeds[0], files=files)
         for embed in message.embeds[1:]:
-          await audit_log.send(content=None, embed=embed)
+          await message_log.send(content=None, embed=embed)
       elif message.content:
-        await audit_log.send(content=message.content, files=tmp)
+        await message_log.send(content=message.content, files=files)
       else:
-        await audit_log.send(content=None, files=tmp)
-      if len(files) > 10:
-        for i in range(10, len(files), 10):
-          await audit_log.send(content=None, files=files[i:i+10])
+        await message_log.send(content=None, files=files)
     else:
       print(f"MID: {message.id} deleted")
 
