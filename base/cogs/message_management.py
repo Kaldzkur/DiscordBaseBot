@@ -78,7 +78,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       }
       if message.edited_at:
         fields["Last edit"] = message.edited_at
-      attachments = {}
+      files=[]
       if len(message.attachments) > 0:
         fields["Attachments"] = len(message.attachments)
         try:
