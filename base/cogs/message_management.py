@@ -79,25 +79,31 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       attachments = {}
       if len(message.attachments) > 0:
         fields["Attachments"] = len(message.attachments)
-        attachments = { attachment.filename: await attachment.save(attachment.filename, use_cached=True) for attachment in message.attachments}
+        try:
+          files = [await attachment.to_file(use_cached=True) for attachment in message.attachments]
+        except: #Fallback to slower method
+          attachments = { attachment.filename: await attachment.save(attachment.filename, use_cached=True) for attachment in message.attachments}
+          files = []
+          for name in attachments:
+            with open(name, "rb") as f:
+              files.append(discord.File(f, filename=name))
+            os.remove(name) #delete file
       if len(message.embeds) > 0:
         fields["Embeds"] = len(message.embeds)
       await self.bot.log_message(message.guild, "AUDIT_LOG",
         title="A message was deleted", description="The message is visible below this entry",
         fields=fields,
       )
+      audit_log = self.bot.get_log(message.guild, "audit-log")
       if len(message.embeds) > 0:
-        await self.bot.get_log(message.guild, "audit-log").send(content=message.content, embed=message.embeds[0])
+        await audit_log.send(content=message.content, embed=message.embeds[0])
         for embed in message.embeds[1:]:
-          await self.bot.get_log(message.guild, "audit-log").send(content=None, embed=embed)
+          await audit_log.send(content=None, embed=embed)
       elif message.content:
-        await self.bot.get_log(message.guild, "audit-log").send(content=message.content)
-      if attachments:
-        for name in attachments:
-          with open(name, "rb") as f:
-            await self.bot.get_log(message.guild, "audit-log").send(content=None, file=discord.File(f, filename=name))
-          os.remove(name) #delete file
-
+        await audit_log.send(content=message.content)
+      if files:
+        for i in range(0, len(files), 10):
+          await audit_log.send(content=None, files=files[i:i+10])
     else:
       print(f"MID: {message.id} deleted")
 
