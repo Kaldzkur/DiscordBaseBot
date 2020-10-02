@@ -90,14 +90,12 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         await self.bot.get_log(message.guild, "audit-log").send(content=message.content, embed=message.embeds[0])
         for embed in message.embeds[1:]:
           await self.bot.get_log(message.guild, "audit-log").send(content=None, embed=embed)
-      else:
+      elif message.content:
         await self.bot.get_log(message.guild, "audit-log").send(content=message.content)
       if attachments:
         for name in attachments:
-          print(name)
           with open(name, "rb") as f:
-            _file = discord.File(f, filename=name)
-            await self.bot.get_log(message.guild, "audit-log").send(content=None, file=_file)
+            await self.bot.get_log(message.guild, "audit-log").send(content=None, file=discord.File(f, filename=name))
 
     else:
       print(f"MID: {message.id} deleted")
