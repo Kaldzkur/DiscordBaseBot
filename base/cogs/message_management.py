@@ -70,7 +70,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     if message.guild:
       files = []
       if len(message.attachments) > 0:
-        files = [await attachment.to_file() for attachment in msg.attachments]
+        files = [await attachment.to_file() for attachment in message.attachments]
       fields ={
         "Author":f"{message.author.mention}\n{message.author}\nUID: {message.author.id}",
         "Channel":f"{message.channel.mention}\nCID: {message.channel.id}",
