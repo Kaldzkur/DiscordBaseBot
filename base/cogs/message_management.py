@@ -104,6 +104,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
           await audit_log.send(content=None, embed=embed)
       elif message.content:
         await audit_log.send(content=message.content, files=tmp)
+      else:
+        await audit_log.send(content=None, files=tmp)
       if len(files) > 10:
         for i in range(10, len(files), 10):
           await audit_log.send(content=None, files=files[i:i+10])
