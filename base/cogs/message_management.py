@@ -85,11 +85,11 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         fields=fields,
       )
       if len(message.embeds) > 0:
-        await self.bot.get_log(guild, "audit-log").send(content=message.content, embed=message.embeds[0])
+        await self.bot.get_log(message.guild, "audit-log").send(content=message.content, embed=message.embeds[0])
         for embed in message.embeds[1:]:
-          await self.bot.get_log(guild, "audit-log").send(content=None, embed=embed)
+          await self.bot.get_log(message.guild, "audit-log").send(content=None, embed=embed)
       else:
-        await self.bot.get_log(guild, "audit-log").send(content=message.content)
+        await self.bot.get_log(message.guild, "audit-log").send(content=message.content)
     else:
       print(f"MID: {message.id} deleted")
 
