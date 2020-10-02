@@ -100,7 +100,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         else:
           await self.bot.get_log(guild, "audit-log").send(content=message.content, files=files[0:10])
       if len(message.attachments) > 10:
-        for i in range(10, len(msg.attachments, 10):
+        for i in range(10, len(msg.attachments, 10)):
           await self.bot.get_log(guild, "audit-log").send(content=None, files=files[i:i+10])
 
     else:
@@ -147,7 +147,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         else:
           await self.bot.get_log(guild, "audit-log").send(content=msg.content, files=files[0:10])
       if len(msg.attachments) > 10:
-        for i in range(10, len(msg.attachments, 10):
+        for i in range(10, len(msg.attachments, 10)):
           await self.bot.get_log(guild, "audit-log").send(content=None, files=files[i:i+10])
 
   @commands.group(
