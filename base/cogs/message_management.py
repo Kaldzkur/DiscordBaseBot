@@ -65,7 +65,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     else:
       await context.send(f"Sorry {context.author.mention}, but something unexpected happened...")
 
-  #@commands.Cog.listener()
+  #@commands.Cog.listener() -> will be triggered by the on_raw_message_delete event
   async def on_message_delete(self, message):
     if message.guild:
       fields ={
@@ -104,7 +104,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   async def on_raw_message_delete(self, payload):
     if payload.cached_message:
       #on_delete will handle this case
-      self.on_message_delete(payload.cached_message)
+      await self.on_message_delete(payload.cached_message)
       return
     if payload.guild_id:
       guild = discord.utils.get(self.bot.guilds, id=payload.guild_id)
