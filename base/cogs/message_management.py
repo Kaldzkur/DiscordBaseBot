@@ -68,9 +68,6 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   @commands.Cog.listener()
   async def on_message_delete(self, message):
     if message.guild:
-      files = []
-      if len(message.attachments) > 0:
-        files = [await attachment.to_file() for attachment in message.attachments]
       fields ={
         "Author":f"{message.author.mention}\n{message.author}\nUID: {message.author.id}",
         "Channel":f"{message.channel.mention}\nCID: {message.channel.id}",
@@ -88,21 +85,11 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         fields=fields,
       )
       if len(message.embeds) > 0:
-        if len(files) == 1:
-          await self.bot.get_log(guild, "audit-log").send(content=message.content, file=files[0], embed=message.embeds[0])
-        else:
-          await self.bot.get_log(guild, "audit-log").send(content=message.content, files=files[0:10], embed=message.embeds[0])
+          await self.bot.get_log(guild, "audit-log").send(content=message.content, embed=message.embeds[0])
         for embed in message.embeds[1:]:
           await self.bot.get_log(guild, "audit-log").send(content=None, embed=embed)
       else:
-        if len(files) == 1:
-          await self.bot.get_log(guild, "audit-log").send(content=message.content, file=files[0])
-        else:
-          await self.bot.get_log(guild, "audit-log").send(content=message.content, files=files[0:10])
-      if len(message.attachments) > 10:
-        for i in range(10, len(msg.attachments, 10)):
-          await self.bot.get_log(guild, "audit-log").send(content=None, files=files[i:i+10])
-
+          await self.bot.get_log(guild, "audit-log").send(content=message.content)
     else:
       print(f"MID: {message.id} deleted")
 
@@ -115,9 +102,6 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         msg = payload.cached_message
       else:
         msg = channel.fetch_message(payload.message_id)
-      files = []
-      if len(msg.attachments) > 0:
-        files = [await attachment.to_file() for attachment in msg.attachments]
       fields = {
         "Author":f"{msg.author.mention}\n{msg.author}\nUID: {msg.author.id}",
         "Channel":f"{channel.mention}\nCID: {channel.id}",
@@ -135,20 +119,11 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         fields=fields
       )
       if len(msg.embeds) > 0:
-        if len(files) == 1:
-          await self.bot.get_log(guild, "audit-log").send(content=msg.content, file=files[0], embed=msg.embeds[0])
-        else:
-          await self.bot.get_log(guild, "audit-log").send(content=msg.content, files=files[0:10], embed=msg.embeds[0])
+          await self.bot.get_log(guild, "audit-log").send(content=msg.content, embed=msg.embeds[0])
         for embed in msg.embeds[1:]:
           await self.bot.get_log(guild, "audit-log").send(content=None, embed=embed)
       else:
-        if len(files) == 1:
-          await self.bot.get_log(guild, "audit-log").send(content=msg.content, file=files[0])
-        else:
-          await self.bot.get_log(guild, "audit-log").send(content=msg.content, files=files[0:10])
-      if len(msg.attachments) > 10:
-        for i in range(10, len(msg.attachments, 10)):
-          await self.bot.get_log(guild, "audit-log").send(content=None, files=files[i:i+10])
+          await self.bot.get_log(guild, "audit-log").send(content=msg.content)
 
   @commands.group(
     name="delete",
