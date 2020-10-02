@@ -69,7 +69,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   async def on_message_delete(self, message):
     if message.guild:
       files = []
-      if 11 > len(msg.attachments) > 0:
+      if len(message.attachments) > 0:
         files = [await attachment.to_file() for attachment in msg.attachments]
       fields ={
         "Author":f"{message.author.mention}\n{message.author}\nUID: {message.author.id}",
