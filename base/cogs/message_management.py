@@ -76,7 +76,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       }
       if message.edited_at:
         fields["Last edit"] = message.edited_at
-      if len(msg.attachments) > 0:
+      if len(message.attachments) > 0:
         fields["Attachments"] = len(message.attachments)
       if len(message.embeds) > 0:
         fields["Embeds"] = len(message.embeds)
