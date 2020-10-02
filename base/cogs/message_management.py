@@ -65,6 +65,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     else:
       await context.send(f"Sorry {context.author.mention}, but something unexpected happened...")
 
+  @commands.Cog.listener()
   async def on_message_delete(self, message):
     if message.guild:
       fields ={
