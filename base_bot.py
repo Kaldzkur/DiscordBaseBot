@@ -49,7 +49,7 @@ class BaseBot(commands.Bot):
     return guild.me.nick
 
   async def log_message(self, guild, log_type, **content):
-    if log_type.upper() not in ["MOD_LOG", "ADMIN_LOG", "ERROR_LOG", "AUDIT_LOG"]:
+    if log_type.upper() not in ["MOD_LOG", "ADMIN_LOG", "ERROR_LOG", "AUDIT_LOG", "MESSAGE_LOG"]:
       await self.log_message(
         guild, "ERROR_LOG",
         title="Invalid Log Type",
