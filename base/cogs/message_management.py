@@ -65,7 +65,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     else:
       await context.send(f"Sorry {context.author.mention}, but something unexpected happened...")
 
-  @commands.Cog.listener()
+  #@commands.Cog.listener()
   async def on_message_delete(self, message):
     if message.guild:
       fields ={
@@ -76,8 +76,10 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       }
       if message.edited_at:
         fields["Last edit"] = message.edited_at
+      attachments = {}
       if len(message.attachments) > 0:
         fields["Attachments"] = len(message.attachments)
+        attachments = { attachment.filename: await attachment.save(attachment.filename, use_cached=True) for attachment in message.attachments}
       if len(message.embeds) > 0:
         fields["Embeds"] = len(message.embeds)
       await self.bot.log_message(message.guild, "AUDIT_LOG",
@@ -90,40 +92,33 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
           await self.bot.get_log(message.guild, "audit-log").send(content=None, embed=embed)
       else:
         await self.bot.get_log(message.guild, "audit-log").send(content=message.content)
+      if attachments:
+        for name in attachments:
+          with open(name, "rb") as f:
+            await self.bot.get_log(message.guild, "audit-log").send(content=None, file=discord.File(f, filename=name))
+
     else:
       print(f"MID: {message.id} deleted")
 
   @commands.Cog.listener()
   async def on_raw_message_delete(self, payload):
+    if payload.cached_message:
+      #on_delete will handle this case
+      self.on_message_delete(payload.cached_message)
+      return
     if payload.guild_id:
       guild = discord.utils.get(self.bot.guilds, id=payload.guild_id)
       channel = discord.utils.get(guild.text_channels, id=payload.channel_id)
-      if payload.cached_message:
         msg = payload.cached_message
       else:
         msg = await channel.fetch_message(payload.message_id)
       fields = {
-        "Author":f"{msg.author.mention}\n{msg.author}\nUID: {msg.author.id}",
         "Channel":f"{channel.mention}\nCID: {channel.id}",
         "Message":f"MID: {msg.id}",
-        "Sent at":msg.created_at,
       }
-      if msg.edited_at:
-        fields["Last edit"] = msg.edited_at
-      if len(msg.attachments) > 0:
-        fields["Attachments"] = len(msg.attachments)
-      if len(msg.embeds) > 0:
-        fields["Embeds"] = len(msg.embeds)
       await self.bot.log_message(guild, "AUDIT_LOG",
-        title="A message was deleted", description="The message is visible below this entry",
-        fields=fields
+        title="A message was deleted", fields=fields
       )
-      if len(msg.embeds) > 0:
-        await self.bot.get_log(guild, "audit-log").send(content=msg.content, embed=msg.embeds[0])
-        for embed in msg.embeds[1:]:
-          await self.bot.get_log(guild, "audit-log").send(content=None, embed=embed)
-      else:
-        await self.bot.get_log(guild, "audit-log").send(content=msg.content)
 
   @commands.group(
     name="delete",
