@@ -164,7 +164,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       await channel.send(f"{member} just left the server. :sob:")
     await self.bot.log_message(member.guild, "AUDIT_LOG",
       user=member, action="left the server",
-      description=f"**Account created on:**\n{member.created_at}\n**Joined on**: {member.joined_at}"
+      fields={"Account created on":f"{member.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC",
+              "Joined on":f"{member.joined_at.strftime('%Y-%m-%d %H:%M:%S')} UTC"}
     )
     if False:
       try:
@@ -185,13 +186,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       return
     invites = await self.bot.fetch_invites(member.guild)
     if invites:
-      fields = {"Invited by": f"{invite.inviter.mention}\n{invite.inviter}\n{invite.code}" for invite in invites}
+      fields = {"Invited by": f"{invite.inviter.mention}\n{invite.inviter}\nCode: {invite.code}" for invite in invites}
     else:
       fields = {}
-    title = f"{member.display_name} just joined the server"
+    fields["Account created on"] = f"{member.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC"
     await self.bot.log_message(member.guild, "AUDIT_LOG",
       user=member, action="joined the server",
-      description=f"**Account created on:**\n{member.created_at}\n**Joined on**: {member.joined_at}",
       fields = fields
     )
     try:
@@ -320,10 +320,10 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         type = "User"
       embed.add_field(name=f"{type}:", value=f"{user.name}\n{user}", inline=False)
       embed.add_field(name="ID:", value=f"{user.id}", inline=False)
-      embed.add_field(name="Created on:", value=f"{user.created_at}", inline=False)
+      embed.add_field(name="Created on:", value=f"{user.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC", inline=False)
       embed.set_thumbnail(url=user.avatar_url)
       if hasattr(user, "joined_at"): #member specific attribute
-        embed.add_field(name=f"Joined {context.guild.name} on:", value=f"{user.joined_at}", inline=False)
+        embed.add_field(name=f"Joined {context.guild.name} on:", value=f"{user.joined_at.strftime('%Y-%m-%d %H:%M:%S')} UTC", inline=False)
       await context.send(content=None, embed=embed)
     users = "\n".join([f"{user} ({user.id})" for user in members])
     await self.bot.log_message(context.guild, "MOD_LOG",

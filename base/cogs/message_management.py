@@ -74,37 +74,29 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         "Author":f"{message.author.mention}\n{message.author}\nUID: {message.author.id}",
         "Channel":f"{message.channel.mention}\nCID: {message.channel.id}",
         "Message":f"MID: {message.id}",
-        "Sent at":message.created_at,
+        "Sent at":f"{message.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC",
+        "Last edit":f"{message.edited_at.strftime('%Y-%m-%d %H:%M:%S')} UTC" if message.edited_at else None,
+        "Embeds":len(message.embeds) if message.embeds else None,
+        "Files":len(message.attachments) if message.attachments else None
       }
-      if message.edited_at:
-        fields["Last edit"] = message.edited_at
-      files=[]
-      if len(message.attachments) > 0:
-        fields["Attachments"] = len(message.attachments)
-        try:
-          files = [await attachment.to_file(use_cached=True) for attachment in message.attachments]
-        except: #Fallback to slower method
-          attachments = { attachment.filename: await attachment.save(attachment.filename, use_cached=True) for attachment in message.attachments}
-          files = []
-          for name in attachments:
-            with open(name, "rb") as f:
-              files.append(discord.File(f, filename=name))
-            os.remove(name) #delete file
-      if len(message.embeds) > 0:
-        fields["Embeds"] = len(message.embeds)
       await self.bot.log_message(message.guild, "MESSAGE_LOG",
         title="A message was deleted", description="The message is visible below this entry",
         fields=fields,
       )
+      files=[]
+      for attachment in message.attachments:
+        try:
+          files.append(await attachment.to_file(use_cached=True))
+        except:
+          files.append(await attachment.to_file())
       message_log = self.bot.get_log(message.guild, "message-log")
-      if len(message.embeds) > 0:
-        await message_log.send(content=message.content, embed=message.embeds[0], files=files)
-        for embed in message.embeds[1:]:
-          await message_log.send(content=None, embed=embed)
-      elif message.content:
-        await message_log.send(content=message.content, files=files)
-      else:
-        await message_log.send(content=None, files=files)
+      if message.content or message.embeds or files:
+        if message.embeds:
+          await message_log.send(content=message.content, embed=message.embeds[0], files=files)
+          for embed in message.embeds[1:]:
+            await message_log.send(content=None, embed=embed)
+        else:
+          await message_log.send(content=message.content, files=files)
     else:
       print(f"MID: {message.id} deleted")
 

@@ -86,6 +86,8 @@ class BaseBot(commands.Bot):
     )
     fields = {}
     if "user" in content:
+      if "action" not in content:
+        content["action"] = "invoked a command"
       if "target" in content:
         embed.set_author(
           name=f"{content['target'].display_name} {content['action']}",
@@ -215,7 +217,7 @@ class BaseBot(commands.Bot):
     bot_category = self.get_bot_category(guild)
     if bot_category is None:
       return None
-    return discord.utils.get(guild.text_channels, name=name, category_id=bot_category.id)
+    return discord.utils.get(bot_category.text_channels, name=name)
 
   def get_mod_role(self, guild):
     name = self.get_setting(guild, "MOD_ROLE_NAME")
@@ -643,7 +645,7 @@ class BaseBot(commands.Bot):
       await mute_role.delete()
 
   async def delete_logs(self, guild):
-    #Get the bot category
+    #Get the bot category\
     bot_category = self.get_bot_category(guild)
     #Deleting all channels that were created with the bot
     if bot_category is not None:
@@ -662,10 +664,13 @@ class BaseBot(commands.Bot):
       audit_log = self.get_log(guild, "audit-log")
       if not audit_log is None:
         await audit_log.delete()
+      message_log = self.get_log(guild, "message-log")
+      if not message_log is None:
+        await message_log.delete()
       await bot_category.delete()
     mod_queue = discord.utils.get(guild.categories, name=f"{guild.me.name}s-queue")
     if mod_queue is not None:
-      await mod_queue.delete()
+      await mod_queue.delete()\
       
   async def change_bot_related_name(self, context, key, value):
     if key == "MOD_ROLE_NAME":
