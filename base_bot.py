@@ -622,7 +622,7 @@ class BaseBot(commands.Bot):
       self.adjust_user_stats(message.guild, message.author, 1, cmd, wrd, 0, 0)         
       #now process commands(only for guild messages)
       if cmd:
-        logger.debug(f"Process message: {message.content}.")
+        logger.debug(f"Processing message: {message.content}.")
         await self.process_commands(message)
         
   async def is_command(self, message):
