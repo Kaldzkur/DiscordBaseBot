@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 from discord.ext.commands.view import StringView
 from discord.ext.commands.context import Context

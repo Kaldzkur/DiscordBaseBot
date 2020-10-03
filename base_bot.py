@@ -34,6 +34,14 @@ class BaseBot(commands.Bot):
       if context.guild.id not in context.bot.intialized or not context.bot.intialized[context.guild.id]:
         raise commands.CheckFailure(f"Guild {context.guild.name} is not initialized")
       return True
+      
+    @self.before_invoke # a before invoke hook to log the command info
+    async def before_command(context):
+      logger.debug(f"Invoking command: {context.command.qualified_name}")
+      
+    @self.after_invoke # an after invoke hook to log the command info
+    async def after_command(context):
+      logger.debug(f"Finished command: {context.command.qualified_name}")
 
   async def find_prefix(self, message):
     prefix = await self.get_prefix(message)
@@ -177,7 +185,7 @@ class BaseBot(commands.Bot):
         cog.init_guild(guild)
     await self.fetch_invites(guild)
     self.intialized[guild.id] = True
-    logger.info(f"{self.user} has connected to: {guild.name} ({guild.id})")
+    logger.info(f"{self.user} has connected to: {guild.name} ({guild.id}).")
     try:
       await self.log_message(guild, "ADMIN_LOG", user=self.user, action="connected")
     except:
@@ -278,6 +286,7 @@ class BaseBot(commands.Bot):
   async def on_command_error(self, context, error):
     if hasattr(error, "original"):
       error = error.original
+    logger.debug(f"Command '{context.message.content}' received {error.__class__.__name__}: {error}")
     fields = {
       "User":f"{context.author.mention}\n{context.author}\nUID:{context.author.id}",
       "Channel":f"{context.message.channel.mention}\nCID:{context.message.channel.id}",
@@ -293,6 +302,7 @@ class BaseBot(commands.Bot):
   async def on_task_error(self, task, error, guild):
     if hasattr(error, "original"):
       error = error.original
+    logger.debug(f"Task '{task}' received {error.__class__.__name__}: {error}")
     fields = {
       "Task":task,
       f"{error.__class__.__name__}":f"{error}"
@@ -301,6 +311,37 @@ class BaseBot(commands.Bot):
       title=f"A {error.__class__.__name__} occured",
       fields=fields,
     )
+    
+  async def on_error(self, event, *args, **kwargs):
+    logger.exception(f"Ignoring exception in {event}.")
+    if len(args) > 0:
+      if isinstance(args[0], list):
+        first_arg = args[0][0]
+      else:
+        first_arg = args[0]
+      if isinstance(first_arg, discord.Guild):
+        guild = first_arg
+      else:
+        if isinstance(first_arg, discord.Reaction):
+          first_arg = first_arg.message
+        if hasattr(first_arg, "guild"):
+          guild = first_arg.guild
+        elif hasattr(fist_arg, "guild_id"):
+          guild = self.get_guild(fist_arg.guild_id)
+        else:
+          guild = None
+    else:
+      guild = None
+    if guild is not None:
+      error = sys.exc_info()[1]
+      if hasattr(error, "original"):
+        error = error.original
+      fields = {"Event":event,
+               f"{error.__class__.__name__}":f"{error}"}
+      await self.log_message(guild, "ERROR_LOG",
+        title=f"A {error.__class__.__name__} occured",
+        fields=fields,
+      )
 
   def create_tables(self, guild):
     if "user_warnings" not in self.db[guild.id]:
@@ -581,6 +622,7 @@ class BaseBot(commands.Bot):
       self.adjust_user_stats(message.guild, message.author, 1, cmd, wrd, 0, 0)         
       #now process commands(only for guild messages)
       if cmd:
+        logger.debug(f"Process message: {message.content}")
         await self.process_commands(message)
         
   async def is_command(self, message):
@@ -630,7 +672,7 @@ class BaseBot(commands.Bot):
         logger.exception(f"Could not load extension: {extension}")
 
   async def on_guild_remove(self, guild):
-    pass # Placeholder
+    logger.info(f"{self.user} has disconnected to: {guild.name} ({guild.id}).")
     
   async def delete_roles(self, guild):
     mod_role = self.get_mod_role(guild)
@@ -789,8 +831,9 @@ if __name__ == "__main__":
   import dotenv
   from base.modules.interactive_help import InteractiveHelpCommand
   # logger
+  import logging.config
+  logging.config.fileConfig("logging.conf")
   logger = logging.getLogger("base_bot")
-  logging.basicConfig(format='(%(asctime)s) %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
   # loading the secret key for this bot
   dotenv.load_dotenv()
   TOKEN = os.getenv("DISCORD_TOKEN")
