@@ -22,11 +22,13 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   
   @tasks.loop(hours=1)
   async def update_slapcount(self):
+    logger.debug("Seting random status.")
     await self.bot.set_random_status()
     now = time.time()
     for guild in self.bot.guilds:
       if self.bot.get_setting(guild, "AUTO_UPDATE") != "ON":
         continue
+      logger.debug(f"Updating warnings in {guild.name} ({guild.id}).")
       try:
         db = self.bot.db[guild.id]
         slaps = db.select("user_warnings")
@@ -42,6 +44,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
           await self.bot.log_message(guild, "MOD_LOG", title="Updated warning counts")
       except Exception as error:
         await self.bot.on_task_error("Update user warnings", error, guild)
+      logger.debug(f"Updating mutes in {guild.name} ({guild.id}).")
       try:
         mutes = db.select("users_muted")
         mute_role = self.bot.get_mute_role(guild)
@@ -64,10 +67,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         await self.bot.on_task_error("Update muted users", error, guild)
       if self.update_slapcount.current_loop > 0: # update user stats not after reboot
         try:
+          logger.debug(f"Updating statistics in {guild.name} ({guild.id}).")
           self.bot.update_user_stats(guild)
           await self.bot.log_message(guild, "MOD_LOG", title="Updated user statistics")
         except Exception as error:
           await self.bot.on_task_error("Update user statistics", error, guild)
+      logger.debug(f"Finished hourly update for {guild.name} ({guild.id}).")
 
   #@update_slapcount.error
   #async def update_slapcount_error(self, error):
