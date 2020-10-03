@@ -31,9 +31,9 @@ class BotTimer(Timer):
   async def _job(self):
     try:
       await asyncio.sleep(self._timeout)
-      logger.debug(f"Run scheduled task: {self.task}")
+      logger.debug(f"Run scheduled task: {self.task}.")
       await self._callback(*self.args, **self.kwargs)
-      logger.debug(f"Finished scheduled task: {self.task}")
+      logger.debug(f"Finished scheduled task: {self.task}.")
     except asyncio.CancelledError:
       pass
     except Exception as error:

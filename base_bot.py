@@ -286,7 +286,7 @@ class BaseBot(commands.Bot):
   async def on_command_error(self, context, error):
     if hasattr(error, "original"):
       error = error.original
-    logger.debug(f"Command '{context.message.content}' received {error.__class__.__name__}: {error}")
+    logger.debug(f"Command '{context.message.content}' received {error.__class__.__name__}: {error}.")
     fields = {
       "User":f"{context.author.mention}\n{context.author}\nUID:{context.author.id}",
       "Channel":f"{context.message.channel.mention}\nCID:{context.message.channel.id}",
@@ -302,7 +302,7 @@ class BaseBot(commands.Bot):
   async def on_task_error(self, task, error, guild):
     if hasattr(error, "original"):
       error = error.original
-    logger.debug(f"Task '{task}' received {error.__class__.__name__}: {error}")
+    logger.debug(f"Task '{task}' received {error.__class__.__name__}: {error}.")
     fields = {
       "Task":task,
       f"{error.__class__.__name__}":f"{error}"
@@ -622,7 +622,7 @@ class BaseBot(commands.Bot):
       self.adjust_user_stats(message.guild, message.author, 1, cmd, wrd, 0, 0)         
       #now process commands(only for guild messages)
       if cmd:
-        logger.debug(f"Process message: {message.content}")
+        logger.debug(f"Process message: {message.content}.")
         await self.process_commands(message)
         
   async def is_command(self, message):
