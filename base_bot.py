@@ -17,7 +17,7 @@ from base.modules.constants import games, animes
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("base.base_bot")
 
 class BaseBot(commands.Bot):
 
@@ -833,7 +833,6 @@ if __name__ == "__main__":
   # logger
   import logging.config
   logging.config.fileConfig("logging.conf")
-  logger = logging.getLogger("base_bot")
   # loading the secret key for this bot
   dotenv.load_dotenv()
   TOKEN = os.getenv("DISCORD_TOKEN")
