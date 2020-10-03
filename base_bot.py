@@ -15,6 +15,10 @@ from base.modules.settings_manager import Settings
 from base.modules.settings_manager import DefaultSetting
 from base.modules.constants import games, animes
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class BaseBot(commands.Bot):
 
   def __init__(self, *arg, **kwargs):
@@ -173,7 +177,7 @@ class BaseBot(commands.Bot):
         cog.init_guild(guild)
     await self.fetch_invites(guild)
     self.intialized[guild.id] = True
-    print(f"({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) {self.user} has connected to: {guild.name} ({guild.id})")
+    logger.info(f"{self.user} has connected to: {guild.name} ({guild.id})")
     try:
       await self.log_message(guild, "ADMIN_LOG", user=self.user, action="connected")
     except:
@@ -208,7 +212,7 @@ class BaseBot(commands.Bot):
         try:
           await add_cmd_from_row(self, guild, cmd)
         except Exception as e:
-          print(f"Error when adding command {cmd['cmdname']}: {e}")
+          logger.warning(f"Error when adding command {cmd['cmdname']}: {e}")
           
   def get_guild_prefix(self, guild):
     return self.get_setting(guild, "PREFIX")
@@ -623,8 +627,7 @@ class BaseBot(commands.Bot):
       try:
         self.load_extension(extension)
       except:
-        print(f"Could not load extension: {extension}")
-        traceback.print_exc()
+        logger.exception(f"Could not load extension: {extension}")
 
   async def on_guild_remove(self, guild):
     pass # Placeholder
@@ -765,7 +768,7 @@ class BaseBot(commands.Bot):
       self.update_user_stats(guild)
     for k,db in self.db.items():
       db.close()
-    print("The bot client is completely closed")
+    logger.info("The bot client is completely closed")
     
 def dynamic_prefix(bot, message):
   if message.guild:
@@ -785,7 +788,10 @@ if __name__ == "__main__":
   import os
   import dotenv
   from base.modules.interactive_help import InteractiveHelpCommand
-  #loading the secret key for this bot
+  # logger
+  logger = logging.getLogger("base_bot")
+  logging.basicConfig(format='(%(asctime)s) %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
+  # loading the secret key for this bot
   dotenv.load_dotenv()
   TOKEN = os.getenv("DISCORD_TOKEN")
   APPA = int(os.getenv("APPA_ID"))

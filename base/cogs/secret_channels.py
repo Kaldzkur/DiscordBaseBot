@@ -7,6 +7,9 @@ from discord.ext import commands
 from base.modules.constants import CACHE_PATH as path
 from base.modules.serializable_object import SecretChannelEntry
 from base.modules.async_timer import run_bot_coroutine
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SecretChannelCog(commands.Cog, name="General Commands"):
   def __init__(self, bot):
@@ -294,4 +297,4 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
         
 def setup(bot):
   bot.add_cog(SecretChannelCog(bot))
-  print("Added secret channel management.")
+  logger.info("Added secret channel management.")

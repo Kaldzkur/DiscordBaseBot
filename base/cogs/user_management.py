@@ -8,6 +8,9 @@ from discord.ext import commands, tasks
 from base.modules.access_checks import has_mod_role, has_admin_role, is_server_owner
 from base.modules.message_helper import wait_user_confirmation
 from base.modules.basic_converter import MemberOrUser
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserManagementCog(commands.Cog, name="User Management Commands"):
   def __init__(self, bot):
@@ -740,4 +743,4 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
 
 def setup(bot):
   bot.add_cog(UserManagementCog(bot))
-  print("Added user management.")
+  logger.info("Added user management.")

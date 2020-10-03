@@ -4,6 +4,9 @@ import discord
 from discord.ext import commands
 from base.modules.access_checks import has_admin_role
 from base.modules.message_helper import wait_user_confirmation
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
   def __init__(self, bot):
@@ -147,4 +150,4 @@ class SettingsManagementCog(commands.Cog, name="Settings Management Commands"):
 #This function is needed for the load_extension routine.
 def setup(bot):
   bot.add_cog(SettingsManagementCog(bot))
-  print("Added settings management.")
+  logger.info("Added settings management.")

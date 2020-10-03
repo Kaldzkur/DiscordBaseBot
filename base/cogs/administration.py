@@ -5,6 +5,9 @@ import typing
 from discord.ext import commands
 from base.modules.access_checks import has_admin_role
 from base.modules.constants import LOG_PATH as path
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AdminCog(commands.Cog, name="Administration Commands"):
   def __init__(self, bot):
@@ -244,4 +247,4 @@ class AdminCog(commands.Cog, name="Administration Commands"):
 #This function is needed for the load_extension routine.
 def setup(bot):
   bot.add_cog(AdminCog(bot))
-  print("Added administration cog.")
+  logger.info("Added administration cog.")

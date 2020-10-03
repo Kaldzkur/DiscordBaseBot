@@ -6,6 +6,9 @@ from discord.ext import commands
 from base.modules.access_checks import has_mod_role, has_admin_role
 from base.modules.constants import CACHE_PATH as path
 from base.modules.message_helper import save_message
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   def __init__(self, bot):
@@ -238,4 +241,4 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
 
 def setup(bot):
   bot.add_cog(ChannelManagementCog(bot))
-  print("Added channel management.")
+  logger.info("Added channel management.")

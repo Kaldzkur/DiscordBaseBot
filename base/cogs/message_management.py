@@ -13,6 +13,9 @@ from base.modules.constants import CACHE_PATH as path
 from base.modules.message_helper import get_message_attachments, send_temp_message, wait_user_confirmation,\
                                         save_message, get_message_brief, get_full_message, clean_message_files
 from base.modules.special_bot_methods import special_process_command, command_check
+import logging
+
+logger = logging.getLogger(__name__)
 
 class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   def __init__(self, bot):
@@ -103,8 +106,6 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
             await message_log.send(content=None, embed=embed)
         else:
           await message_log.send(content=message.content, files=files)
-    else:
-      print(f"MID: {message.id} deleted")
 
   @commands.Cog.listener()
   async def on_raw_message_delete(self, payload):
@@ -918,4 +919,4 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
 
 def setup(bot):
   bot.add_cog(MessageManagementCog(bot))
-  print("Added message management.")
+  logger.info("Added message management.")

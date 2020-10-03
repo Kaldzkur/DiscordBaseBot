@@ -4,6 +4,9 @@ from base.modules.access_checks import has_admin_role, can_edit_commands
 from base.modules.custom_commands import json_load_dict, analyze_existing_cmd, analyze_new_cmd, set_new_cmd, add_cmd_from_attributes
 from base.modules.basic_converter import cmd_name_converter, cmd_arg_converter
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CommandCog(commands.Cog, name="Command Management"):
   def __init__(self, bot):
@@ -287,4 +290,4 @@ class CommandCog(commands.Cog, name="Command Management"):
 #This function is needed for the load_extension routine.
 def setup(bot):
   bot.add_cog(CommandCog(bot))
-  print("Added command cog.")
+  logger.info("Added command cog.")

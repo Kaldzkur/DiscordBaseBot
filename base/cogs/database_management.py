@@ -5,6 +5,9 @@ import discord
 from discord.ext import commands
 from base.modules.access_checks import has_admin_role
 from base.modules.constants import DB_PATH as path
+import logging
+
+logger = logging.getLogger(__name__)
 
 #An extension for hero commands.
 class DatabaseManagementCog(commands.Cog, name="Database Commands"):
@@ -252,4 +255,4 @@ class DatabaseManagementCog(commands.Cog, name="Database Commands"):
 #This function is needed for the load_extension routine.
 def setup(bot):
   bot.add_cog(DatabaseManagementCog(bot))
-  print("Added database management.")
+  logger.info("Added database management.")
