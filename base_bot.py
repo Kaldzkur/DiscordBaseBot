@@ -568,32 +568,34 @@ class BaseBot(commands.Bot):
     if message.type != discord.MessageType.default:
       return # ignores a system message
     if hasattr(message, "guild") and message.guild: #only guild messages are parsed
-      if message.content != "":
-        prefix = await self.find_prefix(message)
-        if prefix is not None:
-          prefix_match = re.match(f"({re.escape(prefix)}+)", message.content)
-          if prefix_match is not None: #command found
-            prefix_count = len(prefix_match.group(0))/len(prefix)
-            if prefix_count == 1: #bot commands should not increase words
-              cmd = 1
-              wrd = 0
-            else: #multiple ? are not counted as a command
-              cmd = 0
-              wrd = len(message.content.split())
-          else:
-            prefix_count = 0
-            cmd = 0
-            wrd = len(message.content.split())
-        else: #Prefix is None, if multiple prefixes were not found in the message
-          prefix_count = 0
-          cmd = 0
-          wrd = len(message.content.split())
-      else: #ignore empty message
-        return
+      if await self.is_command(message):
+        cmd = 1
+        wrd = 0
+      else:
+        cmd = 0
+        wrd = len(message.content.split())
       self.adjust_user_stats(message.guild, message.author, 1, cmd, wrd, 0, 0)         
       #now process commands(only for guild messages)
-      if prefix_count == 1:
+      if cmd:
         await self.process_commands(message)
+        
+  async def is_command(self, message):
+    if not message.content: #ignore empty message
+      return False
+    prefix = await self.find_prefix(message)
+    if prefix is not None:
+      if len(prefix) == 0: # no prefix is required
+        return True
+      prefix_match = re.match(f"({re.escape(prefix)}+)", message.content)
+      if prefix_match is not None: #command found
+        prefix_count = len(prefix_match.group(0))/len(prefix)
+        if prefix_count == 1: #bot commands should not increase words
+          return True
+        else: #multiple prefixes are not counted as a command
+          return False
+      else:
+        return False
+    return False
 
   async def on_guild_join(self, guild):
     await self.init_bot(guild)

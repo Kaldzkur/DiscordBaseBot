@@ -3,6 +3,7 @@ import discord
 import json
 import os
 import typing
+from queue import Queue
 from discord.ext import commands
 from base.modules.access_checks import has_mod_role, check_channel_permissions
 from datetime import datetime, timezone
@@ -20,6 +21,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       os.mkdir(path)
     self.delete_cache = MessageCache.from_json(f'{path}/delete_cache.json')
     self.scheduler = MessageSchedule.from_json(f'{path}/scheduler.json')
+    self.delete_queue = Queue(maxsize=100)
     for guild in self.bot.guilds:
       self.init_guild(guild)
     
@@ -69,6 +71,10 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   async def on_message_delete(self, message):
     if message.guild:
       if self.bot.get_setting(message.guild, "MESSAGE_LOG") == "OFF":
+        return
+      if await self.bot.is_command(message) or message.author == self.bot.user: # ignore command message
+        return
+      if message.id in self.delete_queue.queue: # ignore the messsage deleted by delete or move commands
         return
       fields ={
         "Author":f"{message.author.mention}\n{message.author}\nUID: {message.author.id}",
@@ -169,6 +175,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     minimum_time = int((time.time() - 14 * 24 * 60 * 60) * 1000.0 - 1420070400000) << 22
     bulk_msg = []
     for msg in msg_list:
+      self.delete_queue.put(msg.id)
       if msg.id < minimum_time: # older than 14 days
         await msg.delete()
       else:
