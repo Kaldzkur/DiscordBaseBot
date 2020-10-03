@@ -183,10 +183,16 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   async def on_member_join(self, member):
     if member.id == self.bot.user.id:
       return
+    invites = await self.bot.fetch_invites(member.guild)
+    if invites:
+      fields = {"Invited by": f"{invite.inviter.mention}\n{invite.inviter}\n{invite.code}" for invite in invites}
+    else:
+      fields = {}
     title = f"{member.display_name} just joined the server"
     await self.bot.log_message(member.guild, "AUDIT_LOG",
       user=member, action="joined the server",
-      description=f"**Account created on:**\n{member.created_at}\n**Joined on**: {member.joined_at}"
+      description=f"**Account created on:**\n{member.created_at}\n**Joined on**: {member.joined_at}",
+      fields = fields
     )
     try:
       await member.create_dm()

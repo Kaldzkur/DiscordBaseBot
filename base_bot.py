@@ -23,6 +23,7 @@ class BaseBot(commands.Bot):
     self.db = {}
     self.user_stats = {}
     self.settings = {}
+    self.invites = {}
     self.default_settings = {}
     @self.check # add a global check to the bot
     def check_initialized(context):
@@ -168,12 +169,33 @@ class BaseBot(commands.Bot):
       # you can initialze your cog during a guild join if you have init_guild() function for guild
       if callable(getattr(cog, "init_guild", None)):
         cog.init_guild(guild)
+    await self.fetch_invites(guild)
     self.intialized[guild.id] = True
     print(f"({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) {self.user} has connected to: {guild.name} ({guild.id})")
     try:
       await self.log_message(guild, "ADMIN_LOG", user=self.user, action="connected")
     except:
       pass
+      
+  async def fetch_invites(self, guild):
+    if guild.me.guild_permissions.manage_guild:
+      if guild.id not in self.invites:
+        self.invites[guild.id] = await guild.invites()
+        return None
+      else:
+        old_invites = self.invites[guild.id]
+        new_invites = await guild.invites()
+        updated_invites = []
+        for invite in new_invites:
+          try:
+            old_invite = old_invites[old_invites.index(invite)]
+            if invite.uses > old_invite.uses:
+              updated_invites.append(invite)
+          except:
+            if invite.uses > 0:
+              updated_invites.append(invite)
+        self.invites[guild.id] = new_invites
+        return updated_invites
     
   async def load_custom_commands(self, guild):
     #Add all stores user_commands
