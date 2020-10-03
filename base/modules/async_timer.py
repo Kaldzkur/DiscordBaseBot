@@ -1,6 +1,9 @@
 import asyncio
 import discord
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
   
 class Timer:
   def __init__(self, timeout, callback, *args, **kwargs):
@@ -23,16 +26,25 @@ class BotTimer(Timer):
     self.guild = guild
     self.task = task
     super().__init__(timeout, callback, *args, **kwargs)
+    logger.debug(f"Set up scheduled task '{self.task}' in {timeout}s.")
 
   async def _job(self):
     try:
-      await super()._job()
+      await asyncio.sleep(self._timeout)
+      logger.debug(f"Run scheduled task: {self.task}")
+      await self._callback(*self.args, **self.kwargs)
+      logger.debug(f"Finished scheduled task: {self.task}")
     except asyncio.CancelledError:
       pass
     except Exception as error:
       await self.async_timer_error_log(error)
+      
+  def cancel(self):
+    super().cancel()
+    logger.debug(f"Cancelled scheduled task {self.task}.")
 
   async def async_timer_error_log(self, error):
+    logger.debug(f"Scheduled task {self.task} received {error.__class__.__name__}: {error}.")
     title = f"A {error.__class__.__name__} occured in Timer"
     fields = {"Method":self._callback.__name__,
               "Task":self.task,

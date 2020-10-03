@@ -32,16 +32,16 @@ class BaseBot(commands.Bot):
     @self.check # add a global check to the bot
     def check_initialized(context):
       if context.guild.id not in context.bot.intialized or not context.bot.intialized[context.guild.id]:
-        raise commands.CheckFailure(f"Guild {context.guild.name} is not initialized")
+        raise commands.CheckFailure(f"Guild {context.guild.name} is not initialized.")
       return True
       
     @self.before_invoke # a before invoke hook to log the command info
     async def before_command(context):
-      logger.debug(f"Invoking command: {context.command.qualified_name}")
+      logger.debug(f"Invoking command: {context.command.qualified_name}.")
       
     @self.after_invoke # an after invoke hook to log the command info
     async def after_command(context):
-      logger.debug(f"Finished command: {context.command.qualified_name}")
+      logger.debug(f"Finished command: {context.command.qualified_name}.")
 
   async def find_prefix(self, message):
     prefix = await self.get_prefix(message)
@@ -810,7 +810,7 @@ class BaseBot(commands.Bot):
       self.update_user_stats(guild)
     for k,db in self.db.items():
       db.close()
-    logger.info("The bot client is completely closed")
+    logger.info("The bot client is completely closed.")
     
 def dynamic_prefix(bot, message):
   if message.guild:
