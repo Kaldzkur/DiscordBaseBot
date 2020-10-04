@@ -18,8 +18,6 @@ And you also need a .env file to specify all environment parameters:
 DISCORD_TOKEN={YOUR_BOT_TOKEN}
 # Your discord ID, being a owner grants you all permissions of bot commands
 OWNER_ID={YOUR_DISCORD_ID}
-# Your main server ID, the bot can connect to multiple servers but the event logs without "guild" attribute will be sent to the main server
-SERVER_ID={YOUR_SERVER_ID}
 ```
 ## Extending the bot for your discord
 Creating your own custom bot is fairly easy.
@@ -37,10 +35,11 @@ if __name__ == "__main__":
   import os
   import dotenv
   from base.modules.interactive_help import InteractiveHelpCommand
+  import logging.config
+  logging.config.fileConfig("logging.conf")
   dotenv.load_dotenv()
   TOKEN = int(os.getenv("DISCORD_TOKEN"))
   OWNER = int(os.getenv("OWNER_ID"))
-  SERVER = int(os.getenv("SERVER_ID"))
   #This lookup maps all cog names to a name used in the interactive help.
   cog_categories = {
     "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
@@ -52,7 +51,6 @@ if __name__ == "__main__":
     owner_ids=set([OWNER]),
     case_insensitive = True,
     help_command = InteractiveHelpCommand(cog_categories),
-    server_id = SERVER
   )
   bot.run(TOKEN)
 ````
@@ -101,6 +99,7 @@ ERROR_LOG:         on/off error logging
 ADMIN_LOG:         on/off admin logging
 MOD_LOG:           on/off mod logging
 AUDIT_LOG:         on/off audit logging
+MESSAGE_LOG:       on/off message logging
 ACTIVE_TIME:       interactive message active time
 ````
 
