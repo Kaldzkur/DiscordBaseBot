@@ -198,6 +198,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     else:
       fields = {}
     fields["Account created on"] = f"{member.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC"
+    fields["Joined on"] = f"{member.joined_at.strftime('%Y-%m-%d %H:%M:%S')} UTC"
     await self.bot.log_message(member.guild, "AUDIT_LOG",
       user=member, action="joined the server",
       fields = fields
