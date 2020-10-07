@@ -4,7 +4,9 @@ import pytz
 import asyncio
 import json
 import os
+import inspect
 import discord
+from discord.ext import commands
 from base.modules.constants import num_emojis, CACHE_PATH as path
 
 def json_load_list(string):
@@ -133,7 +135,36 @@ async def wait_user_confirmation(context, content, timeout=30.0):
   else:
     return False, msg
     
-  
+async def request_response(context, content, timeout=30.0, *, converter=lambda x:x, loop=False, invalid_response=""):
+  # ask for a user response
+  if (not inspect.isfunction(converter) and not isinstance(converter, commands.Converter) and 
+    not (inspect.isclass(converter) and issubclass(converter, commands.Converter))):
+    raise TypeError("Converter must be a converter class or a function.")
+  msg = await context.send(content)
+  def confirm(m):
+    return (m.author.id == context.author.id and m.channel == context.message.channel)
+  if not invalid_response:
+    invalid_response = f"Sorry {context.author.mention} but your input is not valid."
+  async def convert(arg):
+    if inspect.isfunction(converter):
+      return converter(arg)
+    elif isinstance(converter, commands.Converter):
+      return await converter.convert(context, arg)
+    else:
+      return await converter().convert(context, arg)
+  while True:
+    try:
+      reply = await context.bot.wait_for("message", timeout=timeout, check=confirm)
+    except asyncio.TimeoutError:
+      return None, msg
+    try:
+      return (await convert(reply.content), msg)
+    except:
+      await context.send(invalid_response)
+      if not loop:
+        return None, msg
+    
+
 async def multiple_choice(context, content, timeout=30.0, *, num:int=None, emojis=None):
   # A multiple choice question waiting for a reaction response
   assert (num or emojis), f"must have at least one input: num or emojis"
