@@ -194,7 +194,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       return
     invites = await self.bot.fetch_invites(member.guild)
     if invites:
-      fields = {"Invited by": f"{invite.inviter.mention}\n{invite.inviter}\nCode: {invite.code}" for invite in invites}
+      fields = {"Invited by": "\n".join([f"{invite.inviter.mention}\n{invite.inviter}\nCode: {invite.code}" for invite in invites])}
     else:
       fields = {}
     fields["Account created on"] = f"{member.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC"
