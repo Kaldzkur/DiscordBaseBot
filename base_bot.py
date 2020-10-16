@@ -286,7 +286,7 @@ class BaseBot(commands.Bot):
   async def on_command_error(self, context, error):
     if hasattr(error, "original"):
       error = error.original
-    logger.debug(f"Command '{context.message.content}' received {error.__class__.__name__}: {error}.")
+    logger.debug(f"Command '{context.message.content}' received {error.__class__.__name__}: {error}")
     fields = {
       "User":f"{context.author.mention}\n{context.author}\nUID:{context.author.id}",
       "Channel":f"{context.message.channel.mention}\nCID:{context.message.channel.id}",
