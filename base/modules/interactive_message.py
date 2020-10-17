@@ -102,16 +102,17 @@ class InteractiveMessage(ABC):
       await newInteractiveMessage.update_message()
       new_emojis = newInteractiveMessage.accept_emojis
       # search through all reactions to see whether to remove all reactions or keep some reactions
-      if len(current_emojis) >= len(new_emojis) and current_emojis[:len(new_emojis)] == new_emojis:
-        # remove the user reaction and clear the extra emojis
-        await reaction.remove(user)
-        for emoji in current_emojis[len(new_emojis):]:
-          await self.message.clear_reaction(emoji)
-      elif len(current_emojis) < len(new_emojis) and current_emojis == new_emojis[:len(current_emojis)]:
+      if len(current_emojis) < len(new_emojis) and current_emojis == new_emojis[:len(current_emojis)]:
         # remove the user reaction and add the missing emojis
         await reaction.remove(user)
         for emoji in new_emojis[len(current_emojis):]:
           await self.message.add_reaction(emoji)
+      elif (len(current_emojis) >= len(new_emojis) and len(current_emojis) <= 2*len(new_emojis)
+            and current_emojis[:len(new_emojis)] == new_emojis):
+        # remove the user reaction and clear the extra emojis
+        await reaction.remove(user)
+        for emoji in current_emojis[len(new_emojis):]:
+          await self.message.clear_reaction(emoji)
       else:
         await self.message.clear_reactions()
         for emoji in new_emojis:
