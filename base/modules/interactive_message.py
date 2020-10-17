@@ -90,9 +90,9 @@ class InteractiveMessage(ABC):
     await self.message.edit(content=_content, embed=_embed, file=_file)
       
   async def wait_for_reaction(self): # wait for the next reaction and update the message
-    accept_emojis = self.accept_emojis
+    current_emojis = self.accept_emojis
     def check(reaction, user):
-      return user == self.context.message.author and reaction.message.id == self.message.id and reaction.emoji in accept_emojis
+      return user == self.context.message.author and reaction.message.id == self.message.id and reaction.emoji in current_emojis
     reaction, user = await self.context.bot.wait_for('reaction_add', timeout=self.timeout, check=check)
     newInteractiveMessage = await self.transfer(reaction.emoji)
     if newInteractiveMessage is None:# nothing changed, remove the reaction
@@ -100,11 +100,21 @@ class InteractiveMessage(ABC):
       await reaction.remove(user)
     else: # update the message and change the reactions
       await newInteractiveMessage.update_message()
-      if accept_emojis == newInteractiveMessage.accept_emojis:
+      new_emojis = newInteractiveMessage.accept_emojis
+      # search through all reactions to see whether to remove all reactions or keep some reactions
+      if len(current_emojis) >= len(new_emojis) and current_emojis[:len(new_emojis)] == new_emojis:
+        # remove the user reaction and clear the extra emojis
         await reaction.remove(user)
+        for emoji in current_emojis[len(new_emojis):]:
+          await self.message.clear_reaction(emoji)
+      elif len(current_emojis) < len(new_emojis) and current_emojis == new_emojis[:len(current_emojis)]:
+        # remove the user reaction and add the missing emojis
+        await reaction.remove(user)
+        for emoji in new_emojis[len(current_emojis):]:
+          await self.message.add_reaction(emoji)
       else:
         await self.message.clear_reactions()
-        for emoji in newInteractiveMessage.accept_emojis:
+        for emoji in new_emojis:
           await self.message.add_reaction(emoji)
     return newInteractiveMessage
     
