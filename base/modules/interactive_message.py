@@ -111,7 +111,7 @@ class InteractiveMessage(ABC):
             and current_emojis[:len(new_emojis)] == new_emojis):
         # remove the user reaction and clear the extra emojis
         await reaction.remove(user)
-        for emoji in current_emojis[len(new_emojis):]:
+        for emoji in reversed(current_emojis[len(new_emojis):]):
           await self.message.clear_reaction(emoji)
       else:
         await self.message.clear_reactions()
