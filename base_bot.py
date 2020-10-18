@@ -734,10 +734,10 @@ class BaseBot(commands.Bot):
       role = self.get_mute_role(context.guild)
     else:
       raise LookupError(f"could not set {key} because the corresponding role/channel does not exist.")
-    embed = discord.Embed(title="Forced Rename", colour=discord.Colour.blue(), timestamp=context.message.created_at)
-    embed.add_field(name=f"{key}:", value=value, inline=False)
-    embed.set_footer(text="ADMIN LOG")
-    await self.get_log(context.guild, "admin-log").send(content=None, embed=embed)
+    await self.log_message(context.guild, "ADMIN_LOG",
+      user=context.author, action=f"forced rename bot-specific item", description=f"{key}:\n{value}",
+      timestamp=context.message.created_at
+    )
     await role.edit(name=value)
     
   def initialize_default_settings(self):
