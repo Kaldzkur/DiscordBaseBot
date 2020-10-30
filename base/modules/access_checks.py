@@ -2,7 +2,7 @@ from discord.ext import commands
 
 def is_server_owner():
   async def predicate(context):
-    return context.author.id == context.guild.owner.id
+    return context.author.id == context.guild.owner_id
   return commands.check(predicate)
   
 def admin_role_check(context):
