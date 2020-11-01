@@ -40,7 +40,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
                 "User":f"{slap['username']}\nUID: {slap['userid']}",
                 "Expiry":f"{time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(slap['expires']))} UTC"
               }
-              await self.bot.log_message(guild, title="Warning(s) expired", fields=fields)
+              await self.bot.log_message(guild, "MOD_LOG", title="Warning(s) expired", fields=fields)
           await self.bot.log_message(guild, "MOD_LOG", title="Updated warning counts")
       except Exception as error:
         await self.bot.on_task_error("Update user warnings", error, guild)
