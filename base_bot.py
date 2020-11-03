@@ -613,6 +613,12 @@ class BaseBot(commands.Bot):
     if message.type != discord.MessageType.default:
       return # ignores a system message
     if hasattr(message, "guild") and message.guild: #only guild messages are parsed
+      if message.channel.type == discord.ChannelType.news:
+        if message.channel.permissions_for(message.guild.me).manage_messages:
+          try:
+            await message.publish() # publish the message in news channel
+          except:
+            pass
       if await self.is_command(message):
         cmd = 1
         wrd = 0
