@@ -843,10 +843,13 @@ if __name__ == "__main__":
     "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands"],
     "Miscellaneous":["Command Management", "General Commands"]
   }
+  intents = discord.Intents.default()
+  intents.members = True
   bot = BaseBot(
     command_prefix=dynamic_prefix,
     owner_ids=set([APPA, SIN]),
     case_insensitive = True,
     help_command = InteractiveHelpCommand(cog_categories),
+    intents=intents
   )
   bot.run(TOKEN)
