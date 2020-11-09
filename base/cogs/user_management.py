@@ -15,72 +15,113 @@ logger = logging.getLogger(__name__)
 class UserManagementCog(commands.Cog, name="User Management Commands"):
   def __init__(self, bot):
     self.bot = bot
-    self.update_slapcount.start()
+    self.update_tasks = {}
+    for guild in self.bot.guilds:
+      self.start_new_task(guild)
+      
+  def init_guild(self, guild):
+    if guild.id not in self.update_tasks:
+      self.start_new_task(guild)
+      
+  def create_new_task(self, guild):
+    @tasks.loop(hours=self.bot.get_setting(guild, "UPDATE_CYCLE"))
+    async def auto_update():
+      if guild not in self.bot.guilds:
+        self.end_task(guild)
+        return
+      await self.update_guild(guild)
+    #@auto_update.error
+    #async def auto_update_error(error):
+      #pass
+    @auto_update.before_loop
+    async def before_auto_update():
+      await self.bot.wait_until_ready()
+    return auto_update
+  
+  def start_new_task(self, guild, forceStart=False):
+    if self.bot.get_setting(guild, "AUTO_UPDATE") != "ON" and not forceStart:
+      return
+    if guild.id not in self.update_tasks:
+      self.update_tasks[guild.id] = self.create_new_task(guild)
+      self.update_tasks[guild.id].start()
+    
+  def end_task(self, guild):
+    if guild.id in self.update_tasks:
+      task = self.update_tasks[guild.id]
+      self.update_tasks.pop(guild.id)
+      task.cancel()
+    
+  def change_auto_update(self, state, guild):
+    if state == "ON":
+      self.start_new_task(guild, True)
+    else:
+      self.end_task(guild)
+      
+  def change_update_cycle(self, hours, guild):
+    if guild.id in self.update_tasks:
+      self.update_tasks[guild.id].change_interval(hours=hours)
     
   def cog_unload(self):
-    self.update_slapcount.cancel()
-  
-  @tasks.loop(hours=1)
-  async def update_slapcount(self):
-    logger.debug("Seting random status.")
-    await self.bot.set_random_status()
+    for guild_id, task in self.update_tasks.items():
+      task.cancel()
+    
+  async def update_guild(self, guild):
+    if self.bot.get_setting(guild, "AUTO_UPDATE") != "ON":
+      return
+    logger.debug(f"Updating warnings in {guild.name} ({guild.id}).")
+    try:
+      await self.update_guild_slaps(guild)
+    except Exception as error:
+      await self.bot.on_task_error("Update user warnings", error, guild)
+    logger.debug(f"Updating mutes in {guild.name} ({guild.id}).")
+    try:
+      await self.update_guild_mutes(guild)
+    except Exception as error:
+      await self.bot.on_task_error("Update muted users", error, guild)
+    logger.debug(f"Updating statistics in {guild.name} ({guild.id}).")
+    try:
+      self.bot.update_user_stats(guild)
+      await self.bot.log_message(guild, "MOD_LOG", title="Updated user statistics")
+    except Exception as error:
+      await self.bot.on_task_error("Update user statistics", error, guild)
+    logger.debug(f"Finished user updates for {guild.name} ({guild.id}).")
+    
+    
+  async def update_guild_slaps(self, guild):
     now = time.time()
-    for guild in self.bot.guilds:
-      if self.bot.get_setting(guild, "AUTO_UPDATE") != "ON":
-        continue
-      logger.debug(f"Updating warnings in {guild.name} ({guild.id}).")
-      try:
-        db = self.bot.db[guild.id]
-        slaps = db.select("user_warnings")
-        if slaps:
-          for slap in slaps:
-            if slap["count"] > 0 and now > slap["expires"]:
-              db.insert_or_update("user_warnings", slap["userid"], slap["username"], 0, slap["expires"])
-              fields = {
-                "User":f"{slap['username']}\nUID: {slap['userid']}",
-                "Expiry":f"{time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(slap['expires']))} UTC"
-              }
-              await self.bot.log_message(guild, "MOD_LOG", title="Warning(s) expired", fields=fields)
-          await self.bot.log_message(guild, "MOD_LOG", title="Updated warning counts")
-      except Exception as error:
-        await self.bot.on_task_error("Update user warnings", error, guild)
-      logger.debug(f"Updating mutes in {guild.name} ({guild.id}).")
-      try:
-        mutes = db.select("users_muted")
-        mute_role = self.bot.get_mute_role(guild)
-        if mutes:
-          for muted_user in mutes:
-            if now > muted_user["expires"]:
-              member = guild.get_member(muted_user["userid"])
-              if not member:
-                member = None
-              else:
-                await member.remove_roles(mute_role)
-              db.delete_row("users_muted", muted_user["userid"])
-              fields = {
-                "User":f"{member}\nUID: {muted_user['userid']}",
-                "Expiry":f"{time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(muted_user['expires']))} UTC"
-              }
-              await self.bot.log_message(guild, "MOD_LOG", title="Mute expired", fields=fields)
-          await self.bot.log_message(guild, "MOD_LOG", title="Updated muted users")
-      except Exception as error:
-        await self.bot.on_task_error("Update muted users", error, guild)
-      if self.update_slapcount.current_loop > 0: # update user stats not after reboot
-        try:
-          logger.debug(f"Updating statistics in {guild.name} ({guild.id}).")
-          self.bot.update_user_stats(guild)
-          await self.bot.log_message(guild, "MOD_LOG", title="Updated user statistics")
-        except Exception as error:
-          await self.bot.on_task_error("Update user statistics", error, guild)
-      logger.debug(f"Finished hourly update for {guild.name} ({guild.id}).")
-
-  #@update_slapcount.error
-  #async def update_slapcount_error(self, error):
-    #pass
-
-  @update_slapcount.before_loop
-  async def before_update_slapcount(self):
-    await self.bot.wait_until_ready()
+    db = self.bot.db[guild.id]
+    slaps = db.select("user_warnings")
+    if slaps:
+      for slap in slaps:
+        if slap["count"] > 0 and now > slap["expires"]:
+          db.insert_or_update("user_warnings", slap["userid"], slap["username"], 0, slap["expires"])
+          fields = {
+            "User":f"{slap['username']}\nUID: {slap['userid']}",
+            "Expiry":f"{time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(slap['expires']))} UTC"
+          }
+          await self.bot.log_message(guild, "MOD_LOG", title="Warning(s) expired", fields=fields)
+      await self.bot.log_message(guild, "MOD_LOG", title="Updated warning counts")
+      
+  async def update_guild_mutes(self, guild):
+    now = time.time()
+    db = self.bot.db[guild.id]
+    mutes = db.select("users_muted")
+    mute_role = self.bot.get_mute_role(guild)
+    if mutes:
+      for muted_user in mutes:
+        if now > muted_user["expires"]:
+          member = guild.get_member(muted_user["userid"])
+          if not member:
+            member = None
+          else:
+            await member.remove_roles(mute_role)
+          db.delete_row("users_muted", muted_user["userid"])
+          fields = {
+            "User":f"{member}\nUID: {muted_user['userid']}",
+            "Expiry":f"{time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(muted_user['expires']))} UTC"
+          }
+          await self.bot.log_message(guild, "MOD_LOG", title="Mute expired", fields=fields)
+      await self.bot.log_message(guild, "MOD_LOG", title="Updated muted users")
 
   async def cog_command_error(self, context, error):
     if hasattr(context.command, "on_error"):

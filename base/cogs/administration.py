@@ -2,7 +2,7 @@ import os
 import time
 import discord
 import typing
-from discord.ext import commands
+from discord.ext import commands, tasks
 from base.modules.access_checks import has_admin_role
 from base.modules.constants import LOG_PATH as path
 import logging
@@ -12,6 +12,15 @@ logger = logging.getLogger(__name__)
 class AdminCog(commands.Cog, name="Administration Commands"):
   def __init__(self, bot):
     self.bot = bot
+    self.update_status.start()
+    
+  def cog_unload(self):
+    self.update_status.cancel()
+    
+  @tasks.loop(hours=1)
+  async def update_status(self):
+    logger.debug("Seting random status.")
+    await self.bot.set_random_status()
 
   async def cog_command_error(self, context, error):
     if hasattr(context.command, "on_error"):

@@ -1,4 +1,5 @@
 import json
+import inspect
 from base.modules.db_manager import Database
 
 class DefaultSetting:
@@ -20,6 +21,8 @@ class DefaultSetting:
     assert self.default is not None
     if checkFun is not None:
       assert checkFun(default)
+    if adaptFun is not None:
+      assert inspect.isfunction(adaptFun)
       
   def transform_setting(self, value):
     if self.transFun is not None:
@@ -40,7 +43,10 @@ class DefaultSetting:
         raise TypeError(f"setting {self.name} does not have the expected format.")
     # adapt the setting in the bot
     if self.adaptFun is not None:
-      await self.adaptFun(value, context)
+      if inspect.iscoroutinefunction(self.adaptFun):
+        await self.adaptFun(value, context)
+      else:
+        self.adaptFun(value, context)
     return value
 
 

@@ -725,26 +725,29 @@ class BaseBot(commands.Bot):
     if mod_queue is not None:
       await mod_queue.delete()\
       
-  async def change_bot_related_name(self, context, key, value):
+  def change_bot_name_fun(self, key):
     if key == "MOD_ROLE_NAME":
-      role = self.get_mod_role(context.guild)
+      role_fun = self.get_mod_role
     elif key == "ADMIN_ROLE_NAME":
-      role = self.get_admin_role(context.guild)
+      role_fun = self.get_admin_role
     elif key == "BOT_ROLE_NAME":
-      role = self.get_bot_role(context.guild)
+      role_fun = self.get_bot_role
     elif key == "BOT_CATEGORY_NAME":
-      role = self.get_bot_category(context.guild)
+      role_fun = self.get_bot_category
     elif key == "CMD_ROLE_NAME":
-      role = self.get_cmd_role(context.guild)
+      role_fun = self.get_cmd_role
     elif key == "MUTE_ROLE_NAME":
-      role = self.get_mute_role(context.guild)
+      role_fun = self.get_mute_role
     else:
       raise LookupError(f"could not set {key} because the corresponding role/channel does not exist.")
-    await self.log_message(context.guild, "ADMIN_LOG",
-      user=context.author, action=f"forced rename bot-specific item", description=f"{key}:\n{value}",
-      timestamp=context.message.created_at
-    )
-    await role.edit(name=value)
+    async def change_bot_name(value, context):
+      role = role_fun(context.guild)
+      await self.log_message(context.guild, "ADMIN_LOG",
+        user=context.author, action=f"forced rename bot-specific item", description=f"{key}:\n{value}",
+        timestamp=context.message.created_at
+      )
+      await role.edit(name=value)
+    return change_bot_name
     
   def initialize_default_settings(self):
     bot_name = self.user.name
@@ -758,26 +761,34 @@ class BaseBot(commands.Bot):
     self.default_settings["MUTE_DURATION"] = DefaultSetting(name="MUTE_DURATION", default=1, description="mute expiry (day)", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
     self.default_settings["MOD_ROLE_NAME"] = DefaultSetting(name="MOD_ROLE_NAME", default=f"{bot_name}'s Enforcer", description="gives mod commands", 
-      adaptFun=lambda value, context: self.change_bot_related_name(context, "MOD_ROLE_NAME", value))
+      adaptFun=self.change_bot_name_fun("MOD_ROLE_NAME"))
     self.default_settings["ADMIN_ROLE_NAME"] = DefaultSetting(name="ADMIN_ROLE_NAME", default=f"{bot_name}'s Master", description="gives admin commands", 
-      adaptFun=lambda value, context: self.change_bot_related_name(context, "ADMIN_ROLE_NAME", value))
+      adaptFun=self.change_bot_name_fun("ADMIN_ROLE_NAME"))
     self.default_settings["BOT_ROLE_NAME"] = DefaultSetting(name="BOT_ROLE_NAME", default=f"{bot_name} Role", description="role the bot claims", 
-      adaptFun=lambda value, context: self.change_bot_related_name(context, "BOT_ROLE_NAME", value))
+      adaptFun=self.change_bot_name_fun("BOT_ROLE_NAME"))
     self.default_settings["CMD_ROLE_NAME"] = DefaultSetting(name="CMD_ROLE_NAME", default="Command Master", description="gives command editing access", 
-      adaptFun=lambda value, context: self.change_bot_related_name(context, "CMD_ROLE_NAME", value))
+      adaptFun=self.change_bot_name_fun("CMD_ROLE_NAME"))
     self.default_settings["MUTE_ROLE_NAME"] = DefaultSetting(name="MUTE_ROLE_NAME", default="Muted", description="revokes posting access", 
-      adaptFun=lambda value, context: self.change_bot_related_name(context, "MUTE_ROLE_NAME", value))
+      adaptFun=self.change_bot_name_fun("MUTE_ROLE_NAME"))
     self.default_settings["BOT_CATEGORY_NAME"] = DefaultSetting(name="BOT_CATEGORY_NAME", default=f"{bot_name}s-bot-corner", description="category for logs", 
-      adaptFun=lambda value, context: self.change_bot_related_name(context, "BOT_CATEGORY_NAME", value))
+      adaptFun=self.change_bot_name_fun("BOT_CATEGORY_NAME"))
     self.default_settings["NUM_DELETE_CACHE"] = DefaultSetting(name="NUM_DELETE_CACHE", default=10, description="num of restorable deleted messages", 
       transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer")
     self.default_settings["MODMAIL_EXPIRY"] = DefaultSetting(name="MODMAIL_EXPIRY", default=15, description="modmail expiry (min)", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
+      
+    async def auto_modmail_change(value, context):
+      await self.get_cog("General Commands").change_auto_delete(value, context.guild)
+      
     self.default_settings["AUTO_MODMAIL"] = DefaultSetting(name="AUTO_MODMAIL", default="ON", description="on/off modmail auto deletion", 
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF", 
-      adaptFun=lambda value, context: self.get_cog("General Commands").change_auto_delete(value, context.guild))
+      adaptFun=auto_modmail_change)
     self.default_settings["AUTO_UPDATE"] = DefaultSetting(name="AUTO_UPDATE", default="ON", description="on/off slaps/stats auto update", 
-      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF",
+      adaptFun=lambda value, context: self.get_cog("User Management Commands").change_auto_update(value, context.guild))
+    self.default_settings["UPDATE_CYCLE"] = DefaultSetting(name="UPDATE_CYCLE", default=1.0, description="interval between updates (h)", 
+      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number",
+      adaptFun=lambda value, context: self.get_cog("User Management Commands").change_update_cycle(value, context.guild))
     self.default_settings["ERROR_LOG"] = DefaultSetting(name="ERROR_LOG", default="ON", description="on/off error logging", 
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
     self.default_settings["ADMIN_LOG"] = DefaultSetting(name="ADMIN_LOG", default="ON", description="on/off admin logging",
