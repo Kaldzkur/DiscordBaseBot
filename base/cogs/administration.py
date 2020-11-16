@@ -170,7 +170,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     invoke_without_command=True,
   )
   @commands.is_owner()
-  async def _log(self, context, start_line:typing.Optional[int]=0, num_lines:typing.Optional[int]=10):
+  async def _log(self, context, num_lines:typing.Optional[int]=10, start_line:typing.Optional[int]=0):
     files = os.listdir(path)
     log_file = os.path.join(path, files[-1])
     with open(log_file, mode="r") as f:
