@@ -238,6 +238,23 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       user=context.author, action="stopped channel monitoring",
       fields=fields, timestamp=context.message.created_at
     )
+    
+  @_channel_monitor.command(
+    name="list",
+    brief="Lists monitored channels",
+  )
+  @commands.has_permissions(manage_channels=True)
+  @commands.bot_has_permissions(manage_channels=True)
+  @has_mod_role()
+  async def _channel_monitor_list(self, context):
+    if context.guild.id not in self.monitor or not self.monitor[context.guild.id]:
+      await context.send("No channel in this guild is under monitor.")
+    else:
+      channels = [context.guild.get_channel(channel_id) for channel_id in self.monitor[context.guild.id]]
+      if not channels:
+        await context.send("No channel in this guild is under monitor.")
+      else:
+        await context.send(f"Monitored channel(s):\n" + "\n".join(channel.mention for channel in channels if channel))
 
 def setup(bot):
   bot.add_cog(ChannelManagementCog(bot))

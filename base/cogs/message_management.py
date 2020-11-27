@@ -67,6 +67,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.command.qualified_name}`.")
     elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, discord.Forbidden):
       await context.send(f"Sorry {context.author.mention}, but I do not have permission to post in the specified channel.")
+    elif isinstance(error, commands.MaxConcurrencyReached):
+      await context.send(f"Sorry {context.author.mention}, but only {error.number} user(s) can execute `{context.command.qualified_name}` at the same time!")
     else:
       await context.send(f"Sorry {context.author.mention}, but something unexpected happened...")
 
@@ -873,30 +875,42 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   )
   @commands.has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
   @commands.bot_has_permissions(read_messages=True, read_message_history=True, send_messages=True, manage_messages=True)
+  @commands.max_concurrency(1, commands.BucketType.guild)
   @has_mod_role()
   async def _purge_msg(self, context, members:commands.Greedy[discord.Member], channels:commands.Greedy[discord.TextChannel], 
                        hasFile:typing.Optional[bool]=None, date:typing.Optional[PastTimeConverter]=None):
     where_clause = []
+    hint_msg = []
     if members:
       in_list = ", ".join(str(member.id) for member in members)
       where_clause.append(f"aid IN ({in_list})")
+      members_list = ", ".join(member.mention for member in members)
+      hint_msg.append(f"from {members_list}")
     if channels:
       in_list = ", ".join(str(channel.id) for channel in channels)
       where_clause.append(f"cid IN ({in_list})")
+      channels_list = ", ".join(channel.mention for channel in channels)
+      hint_msg.append(f"in {channels_list}")
     if hasFile is not None:
       where_clause.append("length(files)>2" if hasFile else "length(files)<=2")
+      hint_msg.append("with file(s)" if hasFile else "without file(s)")
     if date:
       where_clause.append(f"time<={date.timestamp()}")
+      hint_msg.append(f"before {date.strftime('%Y-%m-%d %H:%M:%S %z')}")
     if where_clause:
       where_clause = " AND ".join(where_clause)
     else:
       where_clause = "TRUE"
+    if hint_msg:
+      hint_msg = " ".join(hint_msg) + " "
+    else:
+      hint_msg = ""
     # check how many messages will be deleted
     num = self.bot.db[context.guild.id].query(f"SELECT COUNT(*) FROM messages WHERE {where_clause}")
     if not num or num[0][0]==0:
       await context.send("Message not found.")
       return
-    confirm, msg = await wait_user_confirmation(context, f"{num[0][0]} message(s) will be deleted, do you want to process?")
+    confirm, msg = await wait_user_confirmation(context, f"{num[0][0]} message(s) {hint_msg}will be deleted, do you want to process?")
     if not confirm:
       await context.send("Operation cancelled.")
       return

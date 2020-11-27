@@ -471,7 +471,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   )
   @commands.has_permissions(kick_members=True)
   @commands.bot_has_permissions(kick_members=True)
-  @commands.max_concurrency(1)
+  @commands.max_concurrency(1, commands.BucketType.guild)
   @is_server_owner()
   async def _prune(self, context, *, days:int=30):
     if not(1 <= days <= 30):

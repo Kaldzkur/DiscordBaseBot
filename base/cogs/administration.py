@@ -97,7 +97,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     name="leave",
     brief="Deletes bot-related stuff",
   )
-  @commands.max_concurrency(1)
+  @commands.max_concurrency(1, commands.BucketType.guild)
   @commands.is_owner()
   async def _leave(self, context):
     await context.send(f"> Deleting bot-specific channels and roles...")
