@@ -928,7 +928,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       "Before":date.strftime('%Y-%m-%d %H:%M:%S %z') if date else None,
       "Num":f"{num[0][0]} message(s)"
     }
-    await self.bot.log_messages(context.guild, "MOD_LOG",
+    await self.bot.log_message(context.guild, "MOD_LOG",
       user=context.author, action="purged messages",
       fields=fields, timestamp=context.message.created_at
     )
