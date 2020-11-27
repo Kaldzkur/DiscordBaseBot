@@ -869,13 +869,13 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     name="purge",
     brief="Purges messages in db",
     help="Deletes all messages in db matching the channel and author criterions before a date. Time has to be in \"%d%h%m%s\" format (treated as a past time) or a formatted absolute time.",
-    usage="[@mentions]... [#channels]... [timeBefore]"
+    usage="[@mentions]... [#channels]... [hasFile] [timeBefore]"
   )
   @commands.has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
   @commands.bot_has_permissions(read_messages=True, read_message_history=True, send_messages=True, manage_messages=True)
   @has_mod_role()
   async def _purge_msg(self, context, members:commands.Greedy[discord.Member], channels:commands.Greedy[discord.TextChannel], 
-                        date:typing.Optional[PastTimeConverter]):
+                       hasFile:typing.Optional[bool]=None, date:typing.Optional[PastTimeConverter]=None):
     where_clause = []
     if members:
       in_list = ", ".join(str(member.id) for member in members)
@@ -883,6 +883,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     if channels:
       in_list = ", ".join(str(channel.id) for channel in channels)
       where_clause.append(f"cid IN ({in_list})")
+    if hasFile is not None:
+      where_clause.append("length(files)>2" if hasFile else "length(files)<=2")
     if date:
       where_clause.append(f"time<={date.timestamp()}")
     if where_clause:
