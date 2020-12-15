@@ -230,7 +230,7 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
       if "mod_role" in role_link:
         mod_role = context.guild.get_role(role_link["mod_role"])
         msg = (
-          f"Type: Assign role to author when a mod react\n"
+          f"Type: Assign role to author when a mod reacts\n"
           f"Role Assigned: {role.mention}\n"
           f"Auth Reaction: {emoji}\n"
           f"Auth Channel: {channel.mention}\n"
