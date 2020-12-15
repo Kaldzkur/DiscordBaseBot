@@ -171,7 +171,7 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
     await context.send(f"Role-reaction link added.")
     fields = {
       "Role": f"{role.mention}\nRID: {role.id}",
-      "Message ID":f"{message.id}",
+      "Message":f"{message.jump_url}",
       "Emoji":f"{emoji}"
     }
     await self.bot.log_message(context.guild, "MOD_LOG",
@@ -232,16 +232,17 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
         msg = (
           f"Type: Assign role to author when a mod reacts\n"
           f"Role Assigned: {role.mention}\n"
-          f"Auth Reaction: {emoji}\n"
+          f"Mod Role: {mod_role.mention}\n"
           f"Auth Channel: {channel.mention}\n"
+          f"Auth Reaction: {emoji}\n"
         )
       elif "message" in role_link:
         message = await channel.fetch_message(role_link["message"])
         msg = (
           f"Type: Assign role to member when reacting to the target message\n"
           f"Role Assigned: {role.mention}\n"
-          f"Auth Reaction: {emoji}\n"
           f"Auth Message: {message.jump_url}\n"
+          f"Auth Reaction: {emoji}\n"
         )
       else:
         continue
