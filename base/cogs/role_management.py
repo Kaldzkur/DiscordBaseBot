@@ -124,7 +124,7 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
     if context.guild.me.top_role <= role:
       await context.send(f"Sorry {context.author.mention}, I do not have enough permission to manage {role.mention}")
       return
-    if mod_role < role:
+    if mod_role <= role:
       await context.send(f"Sorry {context.author.mention}, {mod_role.mention} do not have enough permission to manage {role.mention}")
       return
     self.role_links[context.guild.id].append({
