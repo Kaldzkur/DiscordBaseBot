@@ -111,7 +111,7 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
     name="mod",
     brief="Assigns a role based on a mod's reaction",
     help="Automatically assigns roles based on the reaction (verification) from mods. The role will be assigned if someone with a mod role adds a reaction to the member's message in the specific channel.",
-    usage="<#channel> <@mod_role>... <emoji> <@assigned_role>",
+    usage="<#channel> <@mod_role> <emoji> <@assigned_role>",
   )
   @commands.has_permissions(manage_roles=True)
   @commands.bot_has_permissions(manage_roles=True)
