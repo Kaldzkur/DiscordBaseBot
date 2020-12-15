@@ -667,7 +667,8 @@ class BaseBot(commands.Bot):
     self.load_cogs("base.cogs.administration", "base.cogs.database_management",
                    "base.cogs.user_management", "base.cogs.message_management",
                    "base.cogs.settings_management", "base.cogs.secret_channels",
-                   "base.cogs.command_management", "base.cogs.channel_management")
+                   "base.cogs.command_management", "base.cogs.channel_management",
+                   "base.cogs.role_management")
 
 
   def load_cogs(self, *args, **kwargs):
@@ -857,7 +858,7 @@ if __name__ == "__main__":
   SIN = int(os.getenv("SIN_ID"))
   cog_categories = {
     "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
-    "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands"],
+    "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands", "Role Management Commands"],
     "Miscellaneous":["Command Management", "General Commands"]
   }
   intents = discord.Intents.default()
