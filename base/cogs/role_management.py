@@ -27,6 +27,7 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
       pass
     for guild in self.bot.guilds:
       self.init_guild(guild)
+    
       
   def init_guild(self, guild):
     if guild.id not in self.role_links:
@@ -216,20 +217,21 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
   @commands.bot_has_permissions(manage_roles=True)
   @has_mod_role()
   async def _rlink_list(self, context):
-    if len(self.role_links[context.guild.id]) == 0:
-      await context.send("Sorry, but no role-reaction link is found in this server.")
-      return
-    embed = discord.Embed(title=f"Role-Reaction Links", colour=discord.Colour.green(), timestamp=context.message.created_at)
-    i = 1
+    # filter out invalid links
+    valid_links = []
+    link_messages = []
     for role_link in self.role_links[context.guild.id]:
       role = context.guild.get_role(role_link["role"])
       emoji = role_link["emoji"]
       channel = context.guild.get_channel(role_link['channel'])
-      if not role or not channel:
+      if not role or not emoji or not channel:
         continue
       if "mod_role" in role_link:
         mod_role = context.guild.get_role(role_link["mod_role"])
-        msg = (
+        if not mod_role:
+          continue
+        valid_links.append(role_link)
+        link_messages.append(
           f"Type: Assign role to author when a mod reacts\n"
           f"Role Assigned: {role.mention}\n"
           f"Mod Role: {mod_role.mention}\n"
@@ -237,17 +239,25 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
           f"Auth Reaction: {emoji}\n"
         )
       elif "message" in role_link:
-        message = await channel.fetch_message(role_link["message"])
-        msg = (
+        try:
+          message = await channel.fetch_message(role_link["message"])
+        except:
+          continue
+        valid_links.append(role_link)
+        link_messages.append(
           f"Type: Assign role to member when reacting to the target message\n"
           f"Role Assigned: {role.mention}\n"
           f"Auth Message: {message.jump_url}\n"
           f"Auth Reaction: {emoji}\n"
         )
-      else:
-        continue
-      embed.add_field(name=f"Link {i}:", value=msg, inline=False)
-      i += 1
+    # respond
+    self.role_links[context.guild.id] = valid_links
+    if len(self.role_links[context.guild.id]) == 0:
+      await context.send("Sorry, but no role-reaction link is found in this server.")
+      return
+    embed = discord.Embed(title=f"Role-Reaction Links", colour=discord.Colour.green(), timestamp=context.message.created_at)
+    for i in range(len(link_messages)):
+      embed.add_field(name=f"Link {i+1}:", value=link_messages[i], inline=False)
     embed.set_footer(text="R-R LINK")
     await context.send(content=None, embed=embed)
       
