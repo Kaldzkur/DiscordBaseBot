@@ -104,7 +104,7 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
   @commands.has_permissions(manage_roles=True)
   @commands.bot_has_permissions(manage_roles=True)
   @has_mod_role()
-  async def _rlink(self, context, member: discord.Member = None):
+  async def _rlink(self, context):
     await context.send_help("rlink")
 
   @_rlink.command(
