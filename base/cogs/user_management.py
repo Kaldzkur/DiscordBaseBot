@@ -535,10 +535,10 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
           await member.dm_channel.send("".join(dm))
         except:
           pass #DM could not be sent
-        await context.send(f"{self.bot.user.name} \*slaps* {member.mention}.\nSlapcount: {warn_count+1}")
+        await context.send(f"{self.bot.user.name} \*slaps* {member.mention}.\nSlapcount: {warn_count+number}")
         fields = {
           "Reason":reason,
-          "Number of warnings":warn_count+1,
+          "Number of warnings":warn_count+number,
           "Expires":f"{expire_time} UTC"
         }
         await self.bot.log_message(context.guild, "MOD_LOG",
@@ -560,7 +560,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         await context.send(f"```{member} was forced to leave the server.\nReason: excessive slapcount```")
         fields = {
           "Reason":reason,
-          "Number of warnings":warn_count+1,
+          "Number of warnings":warn_count+number,
           "Expires":f"{expire_time} UTC"
         }
         await self.bot.log_message(context.guild, "MOD_LOG",
