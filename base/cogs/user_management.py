@@ -504,8 +504,8 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     if len(members) == 0:
       await context.send_help("warn")
       return
-    if num < 1:
-      num = 1
+    if number < 1:
+      number = 1
     warn_duration = self.get_warn_duration(context.guild) * 86400
     expiry = time.time()
     #If the user_warnings table is missing create a new one
