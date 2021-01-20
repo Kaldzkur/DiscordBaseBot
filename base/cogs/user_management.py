@@ -454,14 +454,14 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     brief="Warns one or more users",
     description="Will warn one or more users. ",
     help="The optional `reason` parameter lets the user know why he has been warned. Warnings expire if no other warnings have been received during the warning exipry set in the bots' settings. After a certain amount of received warnings, the user will be removed from the server.",
-    usage="members... [reason]",
+    usage="members... [number=1] [reason]",
     invoke_without_command=True,
     aliases=["slap"]
   )
   @commands.has_permissions(kick_members=True)
   @commands.bot_has_permissions(kick_members=True)
   @has_mod_role()
-  async def _warn(self, context, members: commands.Greedy[discord.Member], *, reason="not specified"):
+  async def _warn(self, context, members: commands.Greedy[discord.Member], number:typing.Optional[int]=1, *, reason="not specified"):
     if len(members) == 0:
       await context.send_help("warn")
       return
@@ -482,15 +482,15 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         warn_count = 0
       else:
         warn_count = warn_count["count"]
-      expire_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(expiry + warn_duration*(warn_count+1)))
-      if warn_count+1 <= max_warnings:
+      expire_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(expiry + warn_duration*(warn_count+number)))
+      if warn_count+number <= max_warnings:
         try:
           dm = [
             f"You have received a ***WARNING*** in the __{context.guild.name}__ discord. ",
             "To avoid this, please follow the rules of the server.",
-            f"```Reason for warning: {reason}\nNumber of warnings: {warn_count+1}\nExpires: {expire_time} UTC```"
+            f"```Reason for warning: {reason}\nNumber of warnings: {warn_count+number}\nExpires: {expire_time} UTC```"
           ]
-          if warn_count+1 == max_warnings:
+          if warn_count+number == max_warnings:
             dm.append(f"Note: You will be removed from the {context.guild.name} server, if you receive another warning before the previous warnings expire.")
           await member.create_dm()
           await member.dm_channel.send("".join(dm))
@@ -512,7 +512,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
           await member.dm_channel.send(
             f"You have received a ***WARNING*** in the __{context.guild.name}__ discord. "
             f"In addition, you have exceeded the number of allowed warnings. Therefore you have been removed from the server."
-            f"```Reason for warning: {reason}\nNumber of warnings: {warn_count+1}```"
+            f"```Reason for warning: {reason}\nNumber of warnings: {warn_count+number}```"
           )
         except:
           #DM could not be sent
@@ -528,7 +528,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
           user=context.author, action="has been kicked (max warnings)", target=member,
           fields=fields, timestamp=context.message.created_at
         )
-      self.bot.db[context.guild.id].insert_or_update("user_warnings", member.id, f"{member}", warn_count+1, expiry + warn_duration*(warn_count+1))
+      self.bot.db[context.guild.id].insert_or_update("user_warnings", member.id, f"{member}", warn_count+number, expiry + warn_duration*(warn_count+number))
 
   @_warn.command(
     name="info",
