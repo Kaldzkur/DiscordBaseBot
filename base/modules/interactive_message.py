@@ -90,9 +90,9 @@ class InteractiveMessage(ABC):
     await self.message.edit(content=_content, embed=_embed, file=_file)
       
   async def wait_for_reaction(self): # wait for the next reaction and update the message
-    accept_emojis = self.accept_emojis
+    current_emojis = self.accept_emojis
     def check(reaction, user):
-      return user == self.context.message.author and reaction.message.id == self.message.id and reaction.emoji in accept_emojis
+      return user == self.context.message.author and reaction.message.id == self.message.id and reaction.emoji in current_emojis
     reaction, user = await self.context.bot.wait_for('reaction_add', timeout=self.timeout, check=check)
     newInteractiveMessage = await self.transfer(reaction.emoji)
     if newInteractiveMessage is None:# nothing changed, remove the reaction
@@ -100,12 +100,8 @@ class InteractiveMessage(ABC):
       await reaction.remove(user)
     else: # update the message and change the reactions
       await newInteractiveMessage.update_message()
-      if accept_emojis == newInteractiveMessage.accept_emojis:
-        await reaction.remove(user)
-      else:
-        await self.message.clear_reactions()
-        for emoji in newInteractiveMessage.accept_emojis:
-          await self.message.add_reaction(emoji)
+      new_emojis = newInteractiveMessage.accept_emojis
+      await update_reactions(self.message, current_emojis, new_emojis, reaction, user)
     return newInteractiveMessage
     
   async def start(self, msg=None): # start the message, send the embed, and loop for waiting a reaction
@@ -142,3 +138,36 @@ class DetermInteractiveMessage(InteractiveMessage, ABC):
     else:
       return None
     return new_msg
+    
+async def update_reactions(message, old_emojis, new_emojis, reaction, user):
+  # there are two strategies to update the reactions
+  old_len = len(old_emojis)
+  new_len = len(new_emojis)
+  # 1. clear all reactions and add new ones, the number of operations are calculated:
+  clearall_op = 1 + new_len
+  # 2. remove the extra reactions and add new ones, the number of operations are calculated:
+  for common_num in range(min(old_len, new_len)):
+    if old_emojis[common_num] != new_emojis[common_num]:
+      break
+  else:
+    common_num += 1
+  removeadd_op = old_len + new_len - 2 * common_num
+  if clearall_op > removeadd_op: # use strategy 2
+    if reaction.emoji in old_emojis[:common_num]:
+      # remove user reaction if it is in common area
+      await reaction.remove(user)
+    for emoji in reversed(old_emojis[common_num:]):
+      await message.clear_reaction(emoji)
+    for emoji in new_emojis[common_num:]:
+      await message.add_reaction(emoji)
+  else: # use strategy 1
+    await message.clear_reactions()
+    for emoji in new_emojis:
+      await message.add_reaction(emoji)
+
+
+
+
+
+
+

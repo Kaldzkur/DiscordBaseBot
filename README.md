@@ -19,6 +19,8 @@ DISCORD_TOKEN={YOUR_BOT_TOKEN}
 # Your discord ID, being a owner grants you all permissions of bot commands
 OWNER_ID={YOUR_DISCORD_ID}
 ```
+Also to use the function of audit log and member join message you need to enable the privileged intents, check the link below for details:
+https://discordpy.readthedocs.io/en/latest/intents.html
 ## Extending the bot for your discord
 Creating your own custom bot is fairly easy.
 First you fork this project and create a new file for your bot in the root directory.
@@ -46,11 +48,14 @@ if __name__ == "__main__":
     "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands"],
     "Miscellaneous":["Command Management"]
   }
-  bot = MyBot(
+  intents = discord.Intents.default()
+  intents.members = True
+  bot = BaseBot(
     command_prefix=dynamic_prefix,
-    owner_ids=set([OWNER]),
+    owner_ids=set([APPA, SIN]),
     case_insensitive = True,
     help_command = InteractiveHelpCommand(cog_categories),
+    intents=intents
   )
   bot.run(TOKEN)
 ````
