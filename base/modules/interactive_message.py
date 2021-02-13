@@ -9,7 +9,7 @@ class InteractiveMessage(ABC):
   def __init__(self, parent=None, **attributes):
     self.inherited = False # if true, the object inherits emojis and transfer methods from its parent
     self.parent = parent # the parent message
-    self.parent_emoji = arrow_emojis["back"] # the emoji to go backward
+    self.parent_emoji = arrow_emojis["backward"] # the emoji to go backward
     if parent is not None:
       self.timeout = parent.timeout # how long will the message be active
       self.context = parent.context # the context that starts the message

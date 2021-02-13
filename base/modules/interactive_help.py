@@ -68,11 +68,10 @@ async def get_cmd_help_string(command, prefix, page=None, display_all_subcommand
 
 class InteractiveHelpCommand(commands.HelpCommand):
 
-  def __init__(self, category_mappings, custom_category="Server Specific", no_category="No Category", show_aliases=False, sort_commands=True, *args, **options):
+  def __init__(self, category_mappings, no_category="Server Specific", show_aliases=False, sort_commands=True, *args, **options):
     super().__init__(**options)
     #category_mappings = [{"Admin Commands":["Cog1", "Cog2"]}]
     self.category_mappings = category_mappings
-    self.custom_category = custom_category
     self.no_category = no_category
     self.show_aliases = show_aliases
     self.sort_commands = sort_commands
@@ -80,7 +79,6 @@ class InteractiveHelpCommand(commands.HelpCommand):
   async def _create_page_mapping(self, mapping):
     #{"Administraction":[command_list]}
     page_mapping = {}
-    custom_cmds = set()
     no_category_cmds = set()
     for cog, cmd_list in mapping.items():
       commands = await self.filter_commands(cmd_list)
@@ -94,17 +92,17 @@ class InteractiveHelpCommand(commands.HelpCommand):
             page_mapping[name] += commands
             break
         else: # no category
-          no_category_cmds.update(commands)
+          if cog.qualified_name not in page_mapping:
+            page_mapping[cog.qualified_name] = []
+          page_mapping[cog.qualified_name] += commands
       else: # no category
         for cmd in commands:
           if cmd.name != "help": # ignore help command
-            custom_cmds.add(cmd)
-    if len(custom_cmds) > 0:
-      if self.custom_category not in page_mapping:
-        page_mapping[self.custom_category] = []
-      page_mapping[self.custom_category] += list(custom_cmds)
+            no_category_cmds.add(cmd)
     if no_category_cmds:
-      page_mapping[None] = list(no_category_cmds)
+      if self.no_category not in page_mapping:
+        page_mapping[self.no_category] = []
+      page_mapping[self.no_category] += list(no_category_cmds)
     if self.sort_commands:
       for category in page_mapping:
         page_mapping[category].sort(key=operator.attrgetter('name'))
@@ -136,28 +134,64 @@ class InteractiveHelpCommand(commands.HelpCommand):
 
 class InteractiveHelpRoot(InteractiveMessage):
 
-  def __init__(self, help_cmd, page_mapping, parent=None, **attributes):
+  def __init__(self, help_cmd, page_mapping, page_num=1, parent=None, **attributes):
     super().__init__(parent, **attributes)
     self.help_cmd = help_cmd
-    self.child_emojis = [arrow_emojis["forward"]]
     self.page_mapping = page_mapping
+    self.page_num = page_num
+    self.update_child_emojis()
+  
+  def update_child_emojis(self):
+    self.child_emojis = [arrow_emojis["backward"]]
+    total_page = len(self.page_mapping) + 1
+    page_selection = 10 if (total_page//10 > (self.page_num-1)//10) else (total_page % 10)
+    self.child_emojis += [num_emojis[i] for i in range(1, page_selection+1)]
+    self.child_emojis.append(arrow_emojis["forward"])
 
 
   async def transfer_to_child(self, emoji):
-    return InteractiveHelpPage(self.help_cmd, self.page_mapping, 0, self)
+    if emoji == arrow_emojis["backward"]:
+      new_page = max(self.page_num-1, 1)
+    elif emoji == arrow_emojis["forward"]:
+      new_page = min(self.page_num+1, len(self.page_mapping)+1)
+    else:
+      num = num_emojis.index(emoji)
+      new_page = (self.page_num-1)//10 * 10 + num
+    if self.page_num == new_page:
+      return None
+    self.page_num = new_page
+    self.update_child_emojis()
+    return self
+    
 
   async def get_embed(self):
-    description = f"{self.context.bot.user.name} is a multipurpose discord bot that can be extended for each server individually.\nUse the emojis to switch between pages."
-    embed = discord.Embed(title=f"{self.context.bot.user.name} Help", timestamp=datetime.utcnow(), description=description)
-    page_num, pages = 2, []
-    for page in self.page_mapping:
-      if page is None:
-        page = self.help_cmd.no_category
-      pages.append(f"Page {page_num}: {page}")
-      page_num += 1
-    embed.add_field(name="Help Pages:", value="\n".join(pages))
-    embed.set_footer(text=f"Page 1/{len(pages)+1}")
-    return embed
+    if self.page_num == 1: # table of contents
+      description = f"{self.context.bot.user.name} is a multipurpose discord bot that can be extended for each server individually.\nUse the emojis to switch between pages."
+      embed = discord.Embed(title=f"{self.context.bot.user.name} Help", timestamp=datetime.utcnow(), description=description)
+      page_num, pages = 2, []
+      pages.append("Page 1: Table of Contents")
+      for page in self.page_mapping:
+        if page is None:
+          page = self.help_cmd.no_category
+        pages.append(f"Page {page_num}: {page}")
+        page_num += 1
+      embed.add_field(name="Help Pages:", value="\n".join(pages))
+      embed.set_footer(text=f"Page 1/{len(pages)+1}")
+      return embed
+    else: # command page
+      description = []
+      index = self.page_num - 2
+      name = list(self.page_mapping)[index]
+      commands = self.page_mapping[name]
+      for command in commands:
+        description.append(get_cmd_help_string_short(command, self.help_cmd))
+      embed = discord.Embed(
+        title=f"{name} Help" if name is not None else self.help_cmd.no_category,
+        timestamp=datetime.utcnow(),
+        description="\n".join(description)
+      )
+      embed.set_footer(text=f"Page {self.page_num}/{len(self.page_mapping)+1}")
+      return embed
 
 class InteractiveHelpPage(InteractiveMessage):
 
@@ -167,14 +201,14 @@ class InteractiveHelpPage(InteractiveMessage):
     self.page_mapping = page_mapping
     self.page_number = page_number
     if page_number > 0:
-      self.child_emojis.append(arrow_emojis["back"])
+      self.child_emojis.append(arrow_emojis["backward"])
     if page_number < len(self.page_mapping)-1:
       self.child_emojis.append(arrow_emojis["forward"])
       
   async def transfer_to_child(self, emoji):
     if emoji == arrow_emojis["forward"]:
       self.page_number += 1
-    elif emoji == arrow_emojis["back"]:
+    elif emoji == arrow_emojis["backward"]:
       self.page_number -= 1
     return InteractiveHelpPage(self.help_cmd, self.page_mapping, self.page_number, self.parent)
 
@@ -214,7 +248,7 @@ class InteractiveHelpGroup(InteractiveMessage):
       self.child_emojis = num_emojis[0:len_subs]
     elif len_subs > 0:
       if self.page_number > 0:
-        self.child_emojis = [arrow_emojis["back"]]
+        self.child_emojis = [arrow_emojis["backward"]]
         self.child_emojis += num_emojis[0:len_subs-len_nums*self.page_number]
       else:
         self.child_emojis = num_emojis[0:]
@@ -226,7 +260,7 @@ class InteractiveHelpGroup(InteractiveMessage):
       self.page_number += 1
       self.get_child_emojis()
       return self
-    elif emoji == arrow_emojis["back"]:
+    elif emoji == arrow_emojis["backward"]:
       self.page_number -= 1
       self.get_child_emojis()
       return self
@@ -247,10 +281,10 @@ class InteractiveHelpGroup(InteractiveMessage):
   def accept_emojis(self):
     if (isinstance(self.group, commands.Group)
        and self.parent is not None and self.parent.group == self. group
-       and self.page_number == 0 and arrow_emojis["back"] in super().accept_emojis):
+       and self.page_number == 0 and arrow_emojis["backward"] in super().accept_emojis):
       #When we have a group command and are on page 0, we do not want the back emoji.
       tmp = super().accept_emojis
-      tmp.remove(arrow_emojis["back"])
+      tmp.remove(arrow_emojis["backward"])
       return tmp
     else:
       return super().accept_emojis
