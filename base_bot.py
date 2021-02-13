@@ -857,6 +857,9 @@ if __name__ == "__main__":
   APPA = int(os.getenv("APPA_ID"))
   SIN = int(os.getenv("SIN_ID"))
   cog_categories = {
+    "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
+    "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands", "Role Management Commands"],
+    "Miscellaneous":["Command Management", "General Commands"]
   }
   intents = discord.Intents.default()
   intents.members = True
