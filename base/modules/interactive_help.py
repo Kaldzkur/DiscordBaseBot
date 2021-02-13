@@ -176,7 +176,7 @@ class InteractiveHelpRoot(InteractiveMessage):
         pages.append(f"Page {page_num}: {page}")
         page_num += 1
       embed.add_field(name="Help Pages:", value="\n".join(pages))
-      embed.set_footer(text=f"Page 1/{len(pages)+1}")
+      embed.set_footer(text=f"Page 1/{len(pages)}")
       return embed
     else: # command page
       description = []
