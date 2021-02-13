@@ -193,42 +193,6 @@ class InteractiveHelpRoot(InteractiveMessage):
       embed.set_footer(text=f"Page {self.page_num}/{len(self.page_mapping)+1}")
       return embed
 
-class InteractiveHelpPage(InteractiveMessage):
-
-  def __init__(self, help_cmd, page_mapping, page_number, parent=None, **attributes):
-    super().__init__(parent, **attributes)
-    self.help_cmd = help_cmd
-    self.page_mapping = page_mapping
-    self.page_number = page_number
-    if page_number > 0:
-      self.child_emojis.append(arrow_emojis["backward"])
-    if page_number < len(self.page_mapping)-1:
-      self.child_emojis.append(arrow_emojis["forward"])
-      
-  async def transfer_to_child(self, emoji):
-    if emoji == arrow_emojis["forward"]:
-      self.page_number += 1
-    elif emoji == arrow_emojis["backward"]:
-      self.page_number -= 1
-    return InteractiveHelpPage(self.help_cmd, self.page_mapping, self.page_number, self.parent)
-
-  async def get_embed(self):
-    description = []
-    for i, (name, commands) in enumerate(self.page_mapping.items()):
-      if i == self.page_number:
-         break
-    else:
-      raise ValueError(f"Page {self.page_number} not found.")
-    for command in commands:
-      description.append(get_cmd_help_string_short(command, self.help_cmd))
-    embed = discord.Embed(
-      title=f"{name} Help" if name is not None else self.help_cmd.no_category,
-      timestamp=datetime.utcnow(),
-      description="\n".join(description)
-    )
-    embed.set_footer(text=f"Page {self.page_number+2}/{len(self.page_mapping)+1}")
-    return embed
-  
 class InteractiveHelpGroup(InteractiveMessage):
 
   def __init__(self, help_cmd, group, subcommands=None, page_number=0, parent=None, **attributes):
