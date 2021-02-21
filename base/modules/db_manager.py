@@ -185,6 +185,8 @@ class Database(DatabaseManager):
       raise IndexError(f"I expected {expected_len} values in insert, but got {actual_len}.")
     #Check if type matches the table
     for (k,t),v in zip(self.tables[_name]["columns"].items(), args):
+      if v is None:
+        continue # do not check None type
       if "int" in t:
         try:
           int(v)
