@@ -453,7 +453,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     fields = {
       "Channel":f"{message.channel.mention}\nCID: {message.channel.id}",
       "Old Content":'...' + (old_content[-1021:]) if len(old_content) > 1021 else old_content,
-      "New Content:":'...' + (new_content[-1021:]) if len(new_content) > 1021 else new_content
+      "New Content":'...' + (new_content[-1021:]) if len(new_content) > 1021 else new_content
     }
     await self.bot.log_message(context.guild, "MOD_LOG",
       user=context.author, action="edited a bot message",
