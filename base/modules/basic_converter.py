@@ -39,6 +39,11 @@ def TimedeltaConverter(argument):
   if not time_params:
     raise Exception # cannot parse
   return timedelta(**time_params)
+  
+def UnicodeEmoji(argument):
+  if argument in UNICODE_EMOJI:
+    return argument
+  raise Exception
 
 class EmojiUnion(commands.EmojiConverter):
   # return a str if the argument is a unicode emoji, or an emoji if the argument is a custom emoji
