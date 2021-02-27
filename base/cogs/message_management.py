@@ -8,7 +8,7 @@ from discord.ext import commands
 from base.modules.access_checks import has_mod_role, check_channel_permissions
 from datetime import datetime, timezone
 from base.modules.serializable_object import MessageCache, MessageSchedule, CommandSchedule
-from base.modules.basic_converter import FutureTimeConverter, PastTimeConverter, EmojiUnion
+from base.modules.basic_converter import FutureTimeConverter, PastTimeConverter, EmojiUnion, TimedeltaConverter
 from base.modules.constants import CACHE_PATH as path
 from base.modules.message_helper import get_message_attachments, send_temp_message, wait_user_confirmation,\
                                         save_message, get_message_brief, get_full_message, clean_message_files
@@ -263,20 +263,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     embed = discord.Embed(title=f"Cache of Deletes", colour=discord.Colour.green(), timestamp=context.message.created_at)
     i = 1
     for message_cache in self.delete_cache[context.guild.id]:
-      channel = context.guild.get_channel(message_cache['channel'])
-      member = self.bot.get_user(message_cache['author'])
-      msg = (
-        f"Channel: {channel.mention if channel is not None else 'Unknown Channel'}\n"
-        f"Author: {member.mention if member is not None else 'Unknown Member'}\n"
-        f"Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(message_cache['time']))} UTC\n"
-      )
-      if message_cache['content']:
-        msg += f"Content length: {len(message_cache['content'])}\n"
-      if message_cache['embed'] is not None:
-        msg += f"Embed size: {len(discord.Embed.from_dict(message_cache['embed']))}\n"
-      if len(message_cache['files']) > 0:
-        msg += f"Files: {len(message_cache['files'])} file(s)\n"
-      embed.add_field(name=f"Cache {i}:", value=msg)
+      embed.add_field(name=f"Cache {i}:", value=message_cache.to_string(context))
       i += 1
     embed.set_footer(text="DELETE CACHE")
     await context.send(content=None, embed=embed)
@@ -515,14 +502,14 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     name="schedule",
     brief="Schedules a message",
     help="Schedules to send a message in a specific channel. Time has to be in \"%d%h%m%s\" format or a formatted absolute time. If channel is not specified, it will send the message to the current channel. If no content is specified, it will send a reminder mentioning the author.\n\nFor example, to schedule a text in 2 hours 10 minites, use:\n`{prefix}schedule 2h10m some text`\nTo schedule a text at Sep 10 10am at timezone -05:00, use:\n`{prefix}schedule \"9-10 10am -0500\" some text`\nWithout a timezone the absolute time will be interpreted as UTC time.",
-    usage="[#channel] <time> [text]",
+    usage="[#channel] <time> [repeatInterval] [text]",
     case_insensitive = True,
     invoke_without_command=True
   )
   @commands.has_permissions(read_messages=True, send_messages=True)
   @commands.bot_has_permissions(read_messages=True, send_messages=True, manage_messages=True)
   @has_mod_role()
-  async def _schedule(self, context, channel:typing.Optional[discord.TextChannel], schedule:FutureTimeConverter, *, text=None):
+  async def _schedule(self, context, channel:typing.Optional[discord.TextChannel], schedule:FutureTimeConverter, repeat:typing.Optional[TimedeltaConverter], *, text=None):
     if schedule <= datetime.now(timezone.utc):
       await context.send(f"The time your input: {schedule.strftime('%Y-%m-%d %H:%M:%S %z')} is not a future time.")
       return
@@ -530,7 +517,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       channel = context.channel
     elif channel != context.channel:
       check_channel_permissions(channel, context.author, ["read_messages", "send_messages"])
-    message_schedule = await MessageSchedule.from_message(context.message, channel, schedule, text)
+    message_schedule = await MessageSchedule.from_message(context.message, channel, schedule, text, repeat)
     self.scheduler[context.guild.id].append(message_schedule)
     message_schedule.set_timer(context.guild, self.bot, self.scheduler[context.guild.id])
     fields = {
@@ -538,7 +525,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       "Content":(text[:1021] + '...') if text and len(text) > 1021 else text,
       "Embed size":len(discord.Embed.from_dict(message_schedule['embed'])) if message_schedule['embed'] else None,
       "Files":f"{len(message_schedule['files'])} file(s)" if message_schedule["files"] else None,
-      "Time":schedule.strftime('%Y-%m-%d %H:%M:%S %z')
+      "Time":schedule.strftime('%Y-%m-%d %H:%M:%S %z'),
+      "Repeat every":str(repeat) if repeat else None
     }
     await self.bot.log_message(context.guild, "MOD_LOG",
       user=context.author, action="scheduled a message",
@@ -563,22 +551,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     embed = discord.Embed(title=f"Scheduled Messages", colour=discord.Colour.green(), timestamp=context.message.created_at)
     i = 1
     for message_schedule in self.scheduler[context.guild.id]:
-      channel = context.guild.get_channel(message_schedule['channel'])
-      member = self.bot.get_user(message_schedule['author'])
-      msg = (
-        f"Author: {member.mention if member is not None else 'Unknown Member'}\n"
-        f"To be Sent in: {channel.mention if channel is not None else 'Unknown Channel'}\n"
-        f"Scheduled at: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(message_schedule['time']))} UTC\n"
-      )
-      if "cmd" in message_schedule and message_schedule["cmd"]:
-        msg += f"Command: {message_schedule['content']}\n"
-      elif message_schedule['content']:
-        msg += f"Content length: {len(message_schedule['content'])}\n"
-      if message_schedule['embed'] is not None:
-        msg += f"Embed size: {len(discord.Embed.from_dict(message_schedule['embed']))}\n"
-      if len(message_schedule['files']) > 0:
-        msg += f"Files: {len(message_schedule['files'])} file(s)\n"
-      embed.add_field(name=f"Message {i}:", value=msg)
+      embed.add_field(name=f"Message {i}:", value=message_schedule.to_string(context))
       i += 1
     embed.set_footer(text="DELETE CACHE")
     await context.send(content=None, embed=embed)
@@ -669,9 +642,12 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       if (member is None or message_schedule["author"] == member.id) and (channel is None or message_schedule["channel"] == channels.id):
         msg_count += 1
         if msg_count == num:
-          message_schedule.cancel()
+          delete = not bool(message_schedule["repeat_interval"]) # delete the entry if it does not need repeating
+          if delete:
+            message_schedule.cancel()
           await message_schedule.send_now(context.guild, self.bot, context.author)
-          message_schedule.delete_schedule(self.scheduler[context.guild.id])
+          if delete:
+            message_schedule.delete_schedule(self.scheduler[context.guild.id])
           break
     else:
       description=f"No scheduled message number {num} found{' from '+member.mention if member is not None else ''}{' to be sent in '+channel.mention if channel is not None else ''}"
@@ -685,14 +661,14 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   @_schedule.command(
     name="cmd",
     brief="Schedules a command",
-    usage="<time> <cmd>",
+    usage="<time> [repeatInterval] <cmd>",
     aliases=["command"],
     help="A command to schedule a command in the current channel. Your command text should have the same format as the ordinary command with arguments. This command checks the argument of your command by parsing it into a context but there is no guarantee that the command is error-free. If a command needs to read \"context.messgae.content\" then it may not work as expected. And notice that if your command message is deleted before the scheduled time the command may not work.",
   )
   @commands.has_permissions(read_messages=True, send_messages=True)
   @commands.bot_has_permissions(read_messages=True, send_messages=True, manage_messages=True)
   @has_mod_role()
-  async def _cmd_schedule(self, context, schedule:FutureTimeConverter, *, cmd):
+  async def _cmd_schedule(self, context, schedule:FutureTimeConverter, repeat:typing.Optional[TimedeltaConverter], *, cmd):
     if schedule <= datetime.now(timezone.utc):
       await context.send(f"The time your input: {schedule.strftime('%Y-%m-%d %H:%M:%S %z')} is not a future time.")
       return
@@ -701,13 +677,14 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     except Exception as e:
       await context.send(f"Sorry {context.author.mention}, but the scheduled command cannot run: {e}")
       return
-    commandSchedule = await CommandSchedule.from_message(context.message, schedule, cmd)
+    commandSchedule = await CommandSchedule.from_message(context.message, schedule, cmd, repeat)
     self.scheduler[context.guild.id].append(commandSchedule)
     commandSchedule.set_timer(context.guild, self.bot, self.scheduler[context.guild.id])
     fields = {
       "Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}",
       "Command":cmd,
-      "Time":schedule.strftime('%Y-%m-%d %H:%M:%S %z')
+      "Time":schedule.strftime('%Y-%m-%d %H:%M:%S %z'),
+      "Repeat every":str(repeat) if repeat else None
     }
     await self.bot.log_message(context.guild, "MOD_LOG",
       user=context.author, action="scheduled a command",

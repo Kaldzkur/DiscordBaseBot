@@ -1,6 +1,7 @@
 import discord
 import os
 import pytz
+import time
 from datetime import datetime, timedelta
 from base.modules.async_timer import BotTimer as Timer
 import json
@@ -35,6 +36,9 @@ class SerializableObject(dict):
     obj = cls(self)
     obj.update(dic)
     return obj
+    
+  def to_string(self, context):
+    return str(self)
 
 class MessageCache(SerializableObject):
   def __init__(self):
@@ -117,14 +121,31 @@ class MessageCache(SerializableObject):
   def __lt__(self, other):
     return self["time"] < other["time"]
     
+  def to_string(self, context):
+    channel = context.guild.get_channel(self['channel'])
+    member = context.bot.get_user(self['author'])
+    msg = (
+      f"Channel: {channel.mention if channel is not None else 'Unknown Channel'}\n"
+      f"Author: {member.mention if member is not None else 'Unknown Member'}\n"
+      f"Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(self['time']))} UTC\n"
+    )
+    if self['content']:
+      msg += f"Content length: {len(self['content'])}\n"
+    if self['embed'] is not None:
+      msg += f"Embed size: {len(discord.Embed.from_dict(self['embed']))}\n"
+    if len(self['files']) > 0:
+      msg += f"Files: {len(self['files'])} file(s)\n"
+    return msg
+    
 class MessageSchedule(MessageCache):
   def __init__(self):
     super().__init__()
   
   @classmethod
-  async def from_message(cls, msg, channel, schedule, content):
+  async def from_message(cls, msg, channel, schedule, content, repeat_interval=None):
     cache = cls()
     cache["time"] = schedule.timestamp()
+    cache["repeat_interval"] = repeat_interval.total_seconds() if repeat_interval else None
     cache["content"] = content
     cache["author"] = msg.author.id
     cache["channel"] = channel.id
@@ -150,6 +171,7 @@ class MessageSchedule(MessageCache):
     else:
       cache = cls()
     cache["time"] = dic["time"]
+    cache["repeat_interval"] = dic["repeat_interval"]
     cache["content"] = dic["content"]
     cache["author"] = dic["author"]
     cache["channel"] = dic["channel"]
@@ -160,13 +182,21 @@ class MessageSchedule(MessageCache):
   def set_timer(self, guild, bot, scheduler):
     async def send_reminder():
       message = await self.send_now(guild, bot)
-      self.delete_schedule(scheduler) # delete after excuting if case there are files or important messages unsent 
+      if not self["repeat_interval"]: # only delete if it do not need repeating
+        self.delete_schedule(scheduler) # delete after excuting if case there are files or important messages unsent 
+      else:
+        self.set_timer(guild, bot, scheduler)
     user = bot.get_user(self["author"])
     channel = guild.get_channel(self['channel'])
     task = (f"Schedule a message by "
       f"{user.mention if user is not None else '@Unknown Member'} to "
       f"{channel.mention if channel is not None else '#Unknown Channel'}")
-    self.timer = Timer(bot, guild, task, max(self['time'] - datetime.now().timestamp(), 0), send_reminder)
+    now = datetime.now().timestamp()
+    if self["repeat_interval"]: # need to repeat, scheduled at the next repeating time
+      while self["time"] < now:
+        self['time'] += self["repeat_interval"]
+    time = max(self["time"] - now, 0)
+    self.timer = Timer(bot, guild, task, time, send_reminder)
     
   def cancel(self):
     try:
@@ -213,6 +243,26 @@ class MessageSchedule(MessageCache):
       await bot.log_message(guild, "MOD_LOG", user=bot.user, action="sent a scheduled message", fields=fields)
     except:
       pass
+      
+  def to_string(self, context):
+    channel = context.guild.get_channel(self['channel'])
+    member = context.bot.get_user(self['author'])
+    msg = (
+      f"Author: {member.mention if member is not None else 'Unknown Member'}\n"
+      f"To be Sent in: {channel.mention if channel is not None else 'Unknown Channel'}\n"
+      f"Scheduled at: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(self['time']))} UTC\n"
+    )
+    if self["repeat_interval"]:
+      msg += f"Repeat every: {str(timedelta(seconds=self['repeat_interval']))}\n"
+    if "cmd" in self and self["cmd"]:
+      msg += f"Command: {self['content']}\n"
+    elif self['content']:
+      msg += f"Content length: {len(self['content'])}\n"
+    if self['embed'] is not None:
+      msg += f"Embed size: {len(discord.Embed.from_dict(self['embed']))}\n"
+    if len(self['files']) > 0:
+      msg += f"Files: {len(self['files'])} file(s)\n"
+    return msg
     
 class CommandSchedule(MessageSchedule):
   def __init__(self):
@@ -220,9 +270,10 @@ class CommandSchedule(MessageSchedule):
     self["cmd"] = True
     
   @classmethod
-  async def from_message(cls, msg, schedule, content):
+  async def from_message(cls, msg, schedule, content, repeat_interval=None):
     cache = cls()
     cache["time"] = schedule.timestamp()
+    cache["repeat_interval"] = repeat_interval.total_seconds() if repeat_interval else None
     cache["content"] = content
     cache["author"] = msg.author.id
     cache["channel"] = msg.channel.id
@@ -232,14 +283,22 @@ class CommandSchedule(MessageSchedule):
     
   def set_timer(self, guild, bot, scheduler):
     async def send_reminder():
-      self.delete_schedule(scheduler) # delete before excuting to avoid killing from shutdown/reboot/upgrade
+      if not self["repeat_interval"]: # only delete if it do not need repeating
+        self.delete_schedule(scheduler) # delete before excuting to avoid killing from shutdown/reboot/upgrade
+      else:
+        self.set_timer(guild, bot, scheduler)
       message = await self.send_now(guild, bot)
     user = bot.get_user(self["author"])
     channel = guild.get_channel(self['channel'])
     task = (f"Schedule a command `{self['content']}` by "
       f"{user.mention if user is not None else '@Unknown Member'} to "
       f"{channel.mention if channel is not None else '#Unknown Channel'}")
-    self.timer = Timer(bot, guild, task, max(self['time'] - datetime.now().timestamp(), 0), send_reminder)
+    now = datetime.now().timestamp()
+    if self["repeat_interval"]: # need to repeat, scheduled at the next repeating time
+      while self["time"] < now:
+        self['time'] += self["repeat_interval"]
+    time = max(self["time"] - now, 0)
+    self.timer = Timer(bot, guild, task, time, send_reminder)
     
   async def send_now(self, guild, bot, user=None):
     channel = guild.get_channel(self['channel'])
