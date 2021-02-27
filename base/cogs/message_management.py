@@ -695,16 +695,16 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   @commands.command(
     name="remind",
     brief="Sends a reminder message",
-    usage="<time> [text]",
+    usage="<time> [repeatInterval] [text]",
     help="Schedules to send a reminder message mentioning the author in future in the current channel. Time has to be in \"%d%h%m%s\" format or a formatted absolute time. If no text is specified it will just send a default reminder. All the mentions in the text will be removed.\n\nFor example, to schedule a text in 2 hours 10 minites, use:\n`{prefix}remind 2h10m some text`\nTo schedule a text at Sep 10 10am at timezone -05:00, use:\n`{prefix}remind \"9-10 10am -0500\" some text`\nWithout a timezone the absolute time will be interpreted as UTC time.",
     aliases=["reminder"]
   )
   @commands.has_permissions(read_messages=True, send_messages=True)
   @commands.bot_has_permissions(read_messages=True, send_messages=True, manage_messages=True)
-  async def _remind(self, context, schedule:FutureTimeConverter, *, text:commands.clean_content=None):
+  async def _remind(self, context, schedule:FutureTimeConverter, repeat:typing.Optional[TimedeltaConverter], *, text:commands.clean_content=None):
     if text is not None:
       text = f"{context.author.mention} {text}"
-    await context.invoke(self.bot.get_command("schedule"), channel=None, schedule=schedule, text=text)
+    await context.invoke(self.bot.get_command("schedule"), channel=None, schedule=schedule, repeat=repeat, text=text)
     
   @commands.group(
     name="msg",
