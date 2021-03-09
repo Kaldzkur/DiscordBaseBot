@@ -3,7 +3,7 @@ from datetime import datetime
 import discord
 import typing
 from discord.ext import commands, tasks
-from base.modules.access_checks import has_mod_role, has_admin_role, is_server_owner
+from base.modules.access_checks import has_mod_role, has_admin_role, is_server_owner, mod_role_check
 from base.modules.message_helper import wait_user_confirmation
 from base.modules.basic_converter import MemberOrUser
 import logging
@@ -580,31 +580,19 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   )
   async def _warn_info(self, context, members: commands.Greedy[discord.Member]):
     #if not mod:
-    if context.author.id not in self.bot.owner_ids and self.bot.get_mod_role(context.guild) not in context.author.roles:
-      warning = self.bot.db[context.guild.id].select("user_warnings", context.author.id)
+    if not mod_role_check(context) or len(members) == 0:
+      members = [context.author]
+    for member in members:
+      warning = self.bot.db[context.guild.id].select("user_warnings", member.id)
       embed = discord.Embed(title=f"Warning Status", colour=discord.Colour.gold(), timestamp=context.message.created_at)
-      embed.add_field(name="User:", value=f"{context.author.mention}", inline=False)
+      embed.add_field(name="User:", value=f"{member.mention}", inline=False)
       if warning is None:
         embed.add_field(name="Slapcount:", value="0 slap(s)", inline=False)
       else:
         embed.add_field(name="Slapcount:", value=f"{warning['count']} slap(s)", inline=False)
         embed.add_field(name="Expires:", value=f"{time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(warning['expires']))} UTC", inline=False)
       embed.set_footer(text="SLAP STATUS")
-      await context.send(content=None, embed=embed) 
-    else:
-      if len(members) == 0:
-        members = [context.author]
-      for member in members:
-        warning = self.bot.db[context.guild.id].select("user_warnings", member.id)
-        embed = discord.Embed(title=f"Warning Status", colour=discord.Colour.gold(), timestamp=context.message.created_at)
-        embed.add_field(name="User:", value=f"{member.mention}", inline=False)
-        if warning is None:
-          embed.add_field(name="Slapcount:", value="0 slap(s)", inline=False)
-        else:
-          embed.add_field(name="Slapcount:", value=f"{warning['count']} slap(s)", inline=False)
-          embed.add_field(name="Expires:", value=f"{time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(warning['expires']))} UTC", inline=False)
-        embed.set_footer(text="SLAP STATUS")
-        await context.send(content=None, embed=embed)
+      await context.send(content=None, embed=embed)
 
   @_warn.command(
     name="remove",

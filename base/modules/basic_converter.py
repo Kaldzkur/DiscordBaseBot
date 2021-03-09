@@ -26,7 +26,8 @@ def DateConverter(argument):
   return date
   
 def TimedeltaConverter(argument):
-  regex = re.compile(r'((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
+  # format ??d??h??m??s??ms
+  regex = re.compile(r'((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?((?P<milliseconds>\d+?)ms)?')
   parts = regex.match(argument)
   if not parts:
     raise Exception # cannot parse
@@ -38,7 +39,11 @@ def TimedeltaConverter(argument):
   if not time_params:
     raise Exception # cannot parse
   return timedelta(**time_params)
-    
+  
+def UnicodeEmoji(argument):
+  if argument in UNICODE_EMOJI:
+    return argument
+  raise Exception
 
 class EmojiUnion(commands.EmojiConverter):
   # return a str if the argument is a unicode emoji, or an emoji if the argument is a custom emoji
