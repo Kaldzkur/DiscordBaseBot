@@ -61,14 +61,12 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
     guild = self.bot.get_guild(payload.guild_id)
     user = guild.get_member(payload.user_id)
     user_role_ids = [role.id for role in user.roles]
-    message = None
     for role_link in self.role_links[payload.guild_id]:
       if str(payload.emoji) != role_link["emoji"]:
         continue
       if ("channel" in role_link and role_link["channel"] == payload.channel_id and
           "mod_role" in role_link and role_link["mod_role"] in user_role_ids):
-          if message is None:
-            message = await guild.get_channel(payload.channel_id).fetch_message(payload.message_id)
+          message = await guild.get_channel(payload.channel_id).fetch_message(payload.message_id)
           author = message.author
           role = guild.get_role(role_link["role"])
           if role not in author.roles:
@@ -92,6 +90,43 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
           }
           await self.bot.log_message(guild, "MOD_LOG",
             user=user, action="completed self authentication",
+            fields=fields
+          )
+          
+  @commands.Cog.listener()
+  async def on_raw_reaction_remove(self, payload):
+    guild = self.bot.get_guild(payload.guild_id)
+    user = guild.get_member(payload.user_id)
+    user_role_ids = [role.id for role in user.roles]
+    for role_link in self.role_links[payload.guild_id]:
+      if str(payload.emoji) != role_link["emoji"]:
+        continue
+      if ("channel" in role_link and role_link["channel"] == payload.channel_id and
+          "mod_role" in role_link and role_link["mod_role"] in user_role_ids):
+          message = await guild.get_channel(payload.channel_id).fetch_message(payload.message_id)
+          author = message.author
+          role = guild.get_role(role_link["role"])
+          if role in author.roles:
+            await author.remove_roles(role, reason=f"Removed by {user}")
+            logger.debug(f"Removed role {role} from user {author} by {user}.")
+            fields = {
+              "Member": f"{author.mention}\nUID: {author.id}",
+              "Removed Role": f"{role.mention}\nRID: {role.id}",
+            }
+            await self.bot.log_message(guild, "MOD_LOG",
+              user=user, action="removed the role",
+              fields=fields
+            )
+      elif "message" in role_link and role_link["message"] == payload.message_id:
+        role = guild.get_role(role_link["role"])
+        if role in user.roles:
+          await user.remove_roles(role, reason=f"discard self authentication")
+          logger.debug(f"Removed role {role} to user {user} by self authentication.")
+          fields = {
+            "Removed Role": f"{role.mention}\nRID: {role.id}",
+          }
+          await self.bot.log_message(guild, "MOD_LOG",
+            user=user, action="discarded self authentication",
             fields=fields
           )
 
