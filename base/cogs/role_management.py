@@ -121,7 +121,7 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
         role = guild.get_role(role_link["role"])
         if role in user.roles:
           await user.remove_roles(role, reason=f"discard self authentication")
-          logger.debug(f"Removed role {role} to user {user} by self authentication.")
+          logger.debug(f"Removed role {role} from user {user} by self authentication.")
           fields = {
             "Removed Role": f"{role.mention}\nRID: {role.id}",
           }
