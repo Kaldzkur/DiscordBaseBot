@@ -3,6 +3,8 @@ import discord
 import json
 import os
 import typing
+import asyncio
+from urllib.parse import urlparse
 from queue import Queue
 from discord.ext import commands
 from base.modules.access_checks import has_mod_role, check_channel_permissions
@@ -54,6 +56,9 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       
   def get_max_cache(self, guild):
     return self.bot.get_setting(guild, "NUM_DELETE_CACHE")
+    
+  def get_auto_suppress(self, guild):
+    return self.bot.get_setting(guild, "AUTO_SUPPRESS")
 
   async def cog_command_error(self, context, error):
     if hasattr(context.command, "on_error"):
@@ -127,6 +132,18 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       await self.bot.log_message(guild, "MESSAGE_LOG",
         title="A message was deleted", fields=fields
       )
+      
+  @commands.Cog.listener()
+  async def on_message(self, message):
+    suppress_delay = self.get_auto_suppress(message.guild)
+    if suppress_delay > 0:
+      url = urlparse(message.content)
+      if url.netloc in ["tenor.com", "giphy.com"]: # only supports tenor and giphy gifs
+        await asyncio.sleep(suppress_delay*60)
+        try:
+          await message.edit(suppress=True)
+        except:
+          pass
 
   @commands.group(
     name="delete",

@@ -802,6 +802,8 @@ class BaseBot(commands.Bot):
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
     self.default_settings["ACTIVE_TIME"] = DefaultSetting(name="ACTIVE_TIME", default=2, description="interactive message active time", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
+    self.default_settings["AUTO_SUPPRESS"] = DefaultSetting(name="AUTO_SUPPRESS", default=10, description="delay to suppress embeds (min)", 
+      transFun=lambda x: float(x), checkFun=lambda x: x>=0, checkDescription="a non-negative number")
   
   def add_default_settings(self, guild):
     #Add default settings for allowed settings
