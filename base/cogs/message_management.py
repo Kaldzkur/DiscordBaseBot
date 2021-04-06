@@ -233,11 +233,11 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     fields = {
       "Author(s)":"\n".join([f"{member.mention}\n{member}\nUID: {member.id}" for member in members]) if members else None,
       "From Channel(s)":"\n".join([f"{channel.mention}\nCID: {channel.id}" for channel in channels]) if channels else None,
-      "To Channel":f"{context.channel.mention}\nCID: {channel.id}",
+      "To Channel":f"{context.channel.mention}\nCID: {context.channel.id}",
     }
     await self.bot.log_message(context.guild, "MOD_LOG",
       user=context.author, action=f"restored {restored} message(s)",
-      title=title, fields=fields, timestamp=context.message.created_at
+      fields=fields, timestamp=context.message.created_at
     )
     if restored == 0:
       await send_temp_message(context, "Could not restore message(s).", 10)
