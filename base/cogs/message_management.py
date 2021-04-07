@@ -138,7 +138,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     suppress_delay = self.get_auto_suppress(message.guild)
     if suppress_delay > 0:
       url = urlparse(message.content)
-      if url.netloc in ["tenor.com", "giphy.com"] and message.channel.permissions_for(message.guild.me).manage_messages:
+      if (url.netloc and ("tenor.com" in url.netloc or "giphy.com" in url.netloc or "gif" in url.path) and
+        message.channel.permissions_for(message.guild.me).manage_messages):
         # only supports tenor and giphy gifs
         await asyncio.sleep(suppress_delay*60)
         try:
