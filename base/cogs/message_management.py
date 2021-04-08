@@ -26,6 +26,24 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       os.mkdir(path)
     self.delete_cache = MessageCache.from_json(f'{path}/delete_cache.json')
     self.scheduler = MessageSchedule.from_json(f'{path}/scheduler.json')
+    self.suppress_queue = {}
+    try:
+      with open(f"{path}/suppress_queue.json") as f:
+        data = json.load(f)
+        if isinstance(data, dict):
+          for key in data:
+            if isinstance(data[key], dict):
+              self.suppress_queue[int(key)] = {}
+              for key2 in data[key]:
+                if (isinstance(data[key][key2], list)):
+                  new_list = []
+                  self.suppress_queue[int(key)][int(key2)] = new_list
+                  for element in data[key][key2]:
+                    if isinstance(element, list) and len(element) == 2 and isinstance(element[1], int) and element[1] > 0:
+                      new_list.append(element)
+                  new_list.sort(reverse=True, key=lambda element: element[1])
+    except:
+      pass
     self.delete_queue = Queue(maxsize=100)
     for guild in self.bot.guilds:
       self.init_guild(guild)
@@ -35,6 +53,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       self.delete_cache[guild.id] = []
     if guild.id not in self.scheduler:
       self.scheduler[guild.id] = []
+    if guild.id not in self.suppress_queue:
+      self.suppress_queue[guild.id] = {}
     # set up the timers for these schedulers
     for schedule in self.scheduler[guild.id]:
       schedule.set_timer(guild, self.bot, self.scheduler[guild.id])
@@ -51,6 +71,11 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     try:
       with open(f'{path}/scheduler.json', 'w') as f:
         json.dump(self.scheduler, f)
+    except:
+      pass
+    try:
+      with open(f'{path}/suppress_queue.json', 'w') as f:
+        json.dump(self.suppress_queue, f)
     except:
       pass
       
@@ -132,20 +157,43 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       await self.bot.log_message(guild, "MESSAGE_LOG",
         title="A message was deleted", fields=fields
       )
-      
+  """
   @commands.Cog.listener()
   async def on_message(self, message):
+    # this will suppress the embed (usually a gif) of a message if the content is a pure link
     suppress_delay = self.get_auto_suppress(message.guild)
-    if suppress_delay > 0:
-      url = urlparse(message.content)
-      if (url.netloc and ("tenor.com" in url.netloc or "giphy.com" in url.netloc or "gif" in url.path) and
-        message.channel.permissions_for(message.guild.me).manage_messages):
-        # only supports tenor and giphy gifs
+    if suppress_delay > 0 and message.channel.permissions_for(message.guild.me).manage_messages:
+      if self.need_suppress(message.content):
         await asyncio.sleep(suppress_delay*60)
         try:
           await message.edit(suppress=True)
         except:
           pass
+  """
+          
+  @commands.Cog.listener()
+  async def on_message(self, message):
+    # this will suppress the embed (usually a gif) of a message if the content is a pure link
+    suppress_position = self.get_auto_suppress(message.guild)
+    if message.channel.id not in self.suppress_queue[message.guild.id]:
+      self.suppress_queue[message.guild.id][message.channel.id] = []
+    message_list = self.suppress_queue[message.guild.id][message.channel.id]
+    for message_info in message_list:
+      message_info[1] += 1
+    if self.need_suppress(message.content):
+      message_list.append([message.id, 1])
+    while message_list and message_list[0][1] > suppress_position:
+      message_info = message_list.pop(0)
+      try:
+        suppress_message = await message.channel.fetch_message(message_info[0])
+        await suppress_message.edit(suppress=True)
+      except:
+        pass
+          
+  def need_suppress(self, content):
+    url = urlparse(content)
+    return bool(url.netloc)
+     
 
   @commands.group(
     name="delete",
