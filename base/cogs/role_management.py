@@ -46,6 +46,8 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
 
   @commands.Cog.listener()
   async def on_raw_reaction_add(self, payload):
+    if payload.guild_id is None:
+      return
     guild = self.bot.get_guild(payload.guild_id)
     user = guild.get_member(payload.user_id)
     user_role_ids = [role.id for role in user.roles]
@@ -83,6 +85,8 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
           
   @commands.Cog.listener()
   async def on_raw_reaction_remove(self, payload):
+    if payload.guild_id is None:
+      return
     guild = self.bot.get_guild(payload.guild_id)
     user = guild.get_member(payload.user_id)
     user_role_ids = [role.id for role in user.roles]
