@@ -15,8 +15,7 @@ def json_to_object(filename, convert_method):
     data = {}
     try:
       with open(filename) as f:
-        data = json.load(f)
-        data = convert_method(data)
+        data = convert_method(json.load(f))
     except Exception as e:
       logger.error(f"{filename} ignored because of {e.__class__.__name__}: {e}")
     return data
