@@ -9,7 +9,7 @@ from queue import Queue
 from discord.ext import commands
 from base.modules.access_checks import has_mod_role, check_channel_permissions
 from datetime import datetime, timezone
-from base.modules.serializable_object import MessageCache, MessageSchedule, CommandSchedule
+from base.modules.serializable_object import MessageCache, MessageSchedule, CommandSchedule, SuppressQueueEntry, dump_json
 from base.modules.basic_converter import FutureTimeConverter, PastTimeConverter, EmojiUnion, TimedeltaConverter
 from base.modules.constants import CACHE_PATH as path
 from base.modules.message_helper import get_message_attachments, send_temp_message, wait_user_confirmation,\
@@ -26,24 +26,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       os.mkdir(path)
     self.delete_cache = MessageCache.from_json(f'{path}/delete_cache.json')
     self.scheduler = MessageSchedule.from_json(f'{path}/scheduler.json')
-    self.suppress_queue = {}
-    try:
-      with open(f"{path}/suppress_queue.json") as f:
-        data = json.load(f)
-        if isinstance(data, dict):
-          for key in data:
-            if isinstance(data[key], dict):
-              self.suppress_queue[int(key)] = {}
-              for key2 in data[key]:
-                if (isinstance(data[key][key2], list)):
-                  new_list = []
-                  self.suppress_queue[int(key)][int(key2)] = new_list
-                  for element in data[key][key2]:
-                    if isinstance(element, list) and len(element) == 2 and isinstance(element[1], int) and element[1] > 0:
-                      new_list.append(element)
-                  new_list.sort(reverse=True, key=lambda element: element[1])
-    except:
-      pass
+    self.suppress_queue = SuppressQueueEntry.from_json(f'{path}/suppress_queue.json')
     self.delete_queue = Queue(maxsize=100)
     for guild in self.bot.guilds:
       self.init_guild(guild)
@@ -60,24 +43,12 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       schedule.set_timer(guild, self.bot, self.scheduler[guild.id])
   
   def cog_unload(self):
-    try:
-      with open(f'{path}/delete_cache.json', 'w') as f:
-        json.dump(self.delete_cache, f)
-    except:
-      pass
     for key, msglist in self.scheduler.items():
       for msg in msglist:
         msg.cancel()
-    try:
-      with open(f'{path}/scheduler.json', 'w') as f:
-        json.dump(self.scheduler, f)
-    except:
-      pass
-    try:
-      with open(f'{path}/suppress_queue.json', 'w') as f:
-        json.dump(self.suppress_queue, f)
-    except:
-      pass
+    dump_json(self.delete_cache, f'{path}/delete_cache.json')
+    dump_json(self.scheduler, f'{path}/scheduler.json')
+    dump_json(self.suppress_queue, f'{path}/suppress_queue.json')
       
   def get_max_cache(self, guild):
     return self.bot.get_setting(guild, "NUM_DELETE_CACHE")
@@ -161,6 +132,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   @commands.Cog.listener()
   async def on_message(self, message):
     # this will suppress the embed (usually a gif) of a message if the content is a pure link
+    if not message.guild:
+      return
     suppress_delay = self.get_auto_suppress(message.guild)
     if suppress_delay > 0 and message.channel.permissions_for(message.guild.me).manage_messages:
       if self.need_suppress(message.content):
@@ -174,6 +147,8 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   @commands.Cog.listener()
   async def on_message(self, message):
     # this will suppress the embed (usually a gif) of a message if the content is a pure link
+    if not message.guild:
+      return
     suppress_position = self.get_auto_suppress(message.guild)
     if message.channel.id not in self.suppress_queue[message.guild.id]:
       self.suppress_queue[message.guild.id][message.channel.id] = []

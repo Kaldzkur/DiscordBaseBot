@@ -6,6 +6,7 @@ from discord.ext import commands
 from base.modules.access_checks import has_mod_role, has_admin_role
 from base.modules.constants import CACHE_PATH as path
 from base.modules.message_helper import save_message
+from base.modules.serializable_object import dump_json, MonitorEntry
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,18 +14,9 @@ logger = logging.getLogger(__name__)
 class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   def __init__(self, bot):
     self.bot = bot
-    self.monitor = {}
     if not os.path.isdir(path):
       os.mkdir(path)
-    try:
-      with open(f"{path}/monitor.json") as f:
-        data = json.load(f)
-        if isinstance(data, dict):
-          for key in data:
-            if isinstance(data[key], list):
-              self.monitor[int(key)] = data[key]
-    except:
-      pass
+    self.monitor = MonitorEntry.from_json(f"{path}/monitor.json")
     for guild in self.bot.guilds:
       self.init_guild(guild)
     
@@ -33,11 +25,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       self.monitor[guild.id] = []
   
   def cog_unload(self):
-    try:
-      with open(f'{path}/monitor.json', 'w') as f:
-        json.dump(self.monitor, f)
-    except:
-      pass
+    dump_json(self.monitor, f'{path}/monitor.json')
 
   async def cog_command_error(self, context, error):
     if hasattr(context.command, "on_error"):

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from discord.ext import commands
 from base.modules.constants import CACHE_PATH as path
-from base.modules.serializable_object import SecretChannelEntry
+from base.modules.serializable_object import SecretChannelEntry, dump_json
 from base.modules.async_timer import run_bot_coroutine
 import logging
 
@@ -31,11 +31,7 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
   def cog_unload(self):
     for guild in self.bot.guilds:
       self.stop_auto_delete(guild)
-    try:
-      with open(f'{path}/secret_channels.json', 'w') as f:
-        json.dump(self.secret_channels, f)
-    except:
-      pass
+    dump_json(self.secret_channels, f'{path}/secret_channels.json')
 
   async def cog_command_error(self, context, error):
     if hasattr(context.command, "on_error"):

@@ -20,23 +20,65 @@ def json_to_object(filename, convert_method):
         for key in data:
           try:
             object_dict[int(key)] = convert_method(data[key])
-          except:
-            pass
+          except Exception as e:
+            logger.warning(f"{e.__class__.__name__} ignored while loading {filename}: {e}")
   except Exception as e:
-    logger.warning(f"{e.__class__.__name__} ignored while reading {filename}: {e}")
+    logger.error(f"{e.__class__.__name__} ignored while loading {filename}: {e}")
   return object_dict
   
+def dump_json(data, filename):
+  try:
+    with open(filename, 'w') as f:
+      json.dump(data, f)
+  except Exception as e:
+    logger.error(f"{e.__class__.__name__} ignored while dumping to {filename}: {e}")
+  
+  
 class GuildEntry:
-  def __init__(self):
-    self = dict()
-    
+
   @classmethod
   def from_json(cls, filename):
-    pass
+    return json_to_object(filename, cls.from_data)
   
   @classmethod
   def from_data(cls, data):
-    pass
+    return data
+    
+
+class SuppressQueueEntry(GuildEntry):
+  
+  @classmethod
+  def from_data(cls, data):
+    assert isinstance(data, dict)
+    result = {}
+    for key in data:
+      assert isinstance(data[key], list)
+      new_list = []
+      result[int(key)] = new_list
+      for element in data[key]:
+        assert isinstance(element, list) and len(element) == 2 and isinstance(element[1], int) and element[1] > 0
+        new_list.append(element)
+      new_list.sort(reverse=True, key=lambda element: element[1])
+    return result
+    
+
+class MonitorEntry(GuildEntry):
+  
+  @classmethod
+  def from_data(cls, data):
+    assert isinstance(data, list)
+    return data
+    
+
+class RoleLinksEntry(GuildEntry):
+  
+  @classmethod
+  def from_data(cls, data):
+    assert isinstance(data, list)
+    for link in data:
+      assert("role" in link and "channel" in link and "emoji" in link and ("mod_role" in link or "message" in link))
+    return data
+  
   
 class SerializableObject(dict):
   def __init__(self):

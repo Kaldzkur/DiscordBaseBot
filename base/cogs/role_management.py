@@ -4,6 +4,7 @@ from discord.ext import commands, tasks
 from base.modules.access_checks import has_mod_role
 from base.modules.basic_converter import EmojiUnion
 from base.modules.constants import CACHE_PATH as path
+from base.modules.serializable_object import dump_json, RoleLinksEntry
 import os
 import json
 import logging
@@ -13,18 +14,9 @@ logger = logging.getLogger(__name__)
 class RoleManagementCog(commands.Cog, name="Role Management Commands"):
   def __init__(self, bot):
     self.bot = bot
-    self.role_links = {}
     if not os.path.isdir(path):
       os.mkdir(path)
-    try:
-      with open(f"{path}/role_links.json") as f:
-        data = json.load(f)
-        if isinstance(data, dict):
-          for key in data:
-            if isinstance(data[key], list):
-              self.role_links[int(key)] = data[key]
-    except:
-      pass
+    self.role_links = RoleLinksEntry.from_json(f"{path}/role_links.json")
     for guild in self.bot.guilds:
       self.init_guild(guild)
     
@@ -34,11 +26,7 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
       self.role_links[guild.id] = []
 
   def cog_unload(self):
-    try:
-      with open(f'{path}/role_links.json', 'w') as f:
-        json.dump(self.role_links, f)
-    except:
-      pass
+    dump_json(self.role_links, f'{path}/role_links.json')
 
   async def cog_command_error(self, context, error):
     if hasattr(context.command, "on_error"):
