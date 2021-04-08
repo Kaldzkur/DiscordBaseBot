@@ -12,19 +12,26 @@ import logging
 logger = logging.getLogger(__name__)
 
 def json_to_object(filename, convert_method):
-  object_dict = {}
-  try:
-    with open(filename) as f:
-      data = json.load(f)
-      if isinstance(data, dict):
-        for key in data:
-          try:
-            object_dict[int(key)] = convert_method(data[key])
-          except Exception as e:
-            logger.warning(f"{e.__class__.__name__} ignored while loading {filename}: {e}")
-  except Exception as e:
-    logger.error(f"{e.__class__.__name__} ignored while loading {filename}: {e}")
-  return object_dict
+    data = {}
+    try:
+      with open(filename) as f:
+        data = json.load(f)
+        data = convert_method(data)
+    except Exception as e:
+      logger.error(f"{filename} ignored because of {e.__class__.__name__}: {e}")
+    return data
+
+def dict_json_to_object(filename, convert_method):
+  def full_convert_method(data):
+    assert isinstance(data, dict)
+    object_dict = {}
+    for key in data:
+      try:
+        object_dict[int(key)] = convert_method(data[key])
+      except Exception as e:
+        logger.warning(f"{e.__class__.__name__} ignored while loading {filename}: {e}")
+    return object_dict
+  return json_to_object(filename, full_convert_method)
   
 def dump_json(data, filename):
   try:
@@ -32,13 +39,25 @@ def dump_json(data, filename):
       json.dump(data, f)
   except Exception as e:
     logger.error(f"{e.__class__.__name__} ignored while dumping to {filename}: {e}")
+    
+    
+class JsonEntry:
+
+  @classmethod
+  def from_json(cls, filename):
+    return json_to_object(filename, cls.from_data)
+  
+  @classmethod
+  def from_data(cls, data):
+    return data
+  
   
   
 class GuildEntry:
 
   @classmethod
   def from_json(cls, filename):
-    return json_to_object(filename, cls.from_data)
+    return dict_json_to_object(filename, cls.from_data)
   
   @classmethod
   def from_data(cls, data):
@@ -87,7 +106,7 @@ class SerializableObject(dict):
   @classmethod
   def from_json(cls, filename):
     convert_method = lambda data: [cls.from_dict(msg) for msg in data]
-    return json_to_object(filename, convert_method)
+    return dict_json_to_object(filename, convert_method)
     
   @classmethod
   def from_dict(cls, dic: dict):
