@@ -7,6 +7,9 @@ from base.modules.async_timer import BotTimer as Timer
 import json
 from base.modules.special_bot_methods import special_process_command
 from base.modules.constants import CACHE_PATH as path
+import logging
+
+logger = logging.getLogger(__name__)
 
 def json_to_object(filename, convert_method):
   object_dict = {}
@@ -16,12 +19,24 @@ def json_to_object(filename, convert_method):
       if isinstance(data, dict):
         for key in data:
           try:
-            object_dict[int(key)] = [convert_method(msg) for msg in data[key]]
+            object_dict[int(key)] = convert_method(data[key])
           except:
             pass
-  except:
-    pass
+  except Exception as e:
+    logger.warning(f"{e.__class__.__name__} ignored while reading {filename}: {e}")
   return object_dict
+  
+class GuildEntry:
+  def __init__(self):
+    self = dict()
+    
+  @classmethod
+  def from_json(cls, filename):
+    pass
+  
+  @classmethod
+  def from_data(cls, data):
+    pass
   
 class SerializableObject(dict):
   def __init__(self):
@@ -29,7 +44,8 @@ class SerializableObject(dict):
     
   @classmethod
   def from_json(cls, filename):
-    return json_to_object(filename, cls.from_dict)
+    convert_method = lambda data: [cls.from_dict(msg) for msg in data]
+    return json_to_object(filename, convert_method)
     
   @classmethod
   def from_dict(cls, dic: dict):

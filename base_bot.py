@@ -220,7 +220,7 @@ class BaseBot(commands.Bot):
         try:
           await add_cmd_from_row(self, guild, cmd)
         except Exception as e:
-          logger.warning(f"Error when adding command {cmd['cmdname']}: {e}")
+          logger.warning(f"{e.__class__.__name__} occurs when adding command {cmd['cmdname']}: {e}")
           
   def get_guild_prefix(self, guild):
     return self.get_setting(guild, "PREFIX")
@@ -302,7 +302,7 @@ class BaseBot(commands.Bot):
   async def on_task_error(self, task, error, guild):
     if hasattr(error, "original"):
       error = error.original
-    logger.debug(f"Task '{task}' received {error.__class__.__name__}: {error}.")
+    logger.debug(f"Task '{task}' received {error.__class__.__name__}: {error}")
     fields = {
       "Task":task,
       f"{error.__class__.__name__}":f"{error}"
@@ -313,7 +313,10 @@ class BaseBot(commands.Bot):
     )
     
   async def on_error(self, event, *args, **kwargs):
-    logger.exception(f"Ignoring exception in {event}.")
+    error = sys.exc_info()[1]
+    if hasattr(error, "original"):
+      error = error.original
+    logger.exception(f"Ignoring {error.__class__.__name__} in {event}: {error}")
     if len(args) > 0:
       if isinstance(args[0], list):
         first_arg = args[0][0]
@@ -333,9 +336,6 @@ class BaseBot(commands.Bot):
     else:
       guild = None
     if guild is not None:
-      error = sys.exc_info()[1]
-      if hasattr(error, "original"):
-        error = error.original
       fields = {"Event":event,
                f"{error.__class__.__name__}":f"{error}"}
       await self.log_message(guild, "ERROR_LOG",
