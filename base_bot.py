@@ -316,7 +316,7 @@ class BaseBot(commands.Bot):
     error = sys.exc_info()[1]
     if hasattr(error, "original"):
       error = error.original
-    logger.exception(f"Ignoring {error.__class__.__name__} in {event}: {error}")
+    logger.debug(f"Ignoring {error.__class__.__name__} in {event}: {error}")
     if len(args) > 0:
       if isinstance(args[0], list):
         first_arg = args[0][0]
@@ -802,8 +802,16 @@ class BaseBot(commands.Bot):
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
     self.default_settings["ACTIVE_TIME"] = DefaultSetting(name="ACTIVE_TIME", default=2, description="interactive message active time", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
-    self.default_settings["AUTO_SUPPRESS"] = DefaultSetting(name="AUTO_SUPPRESS", default=10, description="delay to suppress embeds (min)", 
+    self.default_settings["SUPPRESS_MODE"] = DefaultSetting(name="SUPPRESS_MODE", default="OFF", description="mode to suppress embeds", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["OFF", "DELAY", "POSITION"], checkDescription="OFF, DELAY or POSITION")
+    self.default_settings["SUPPRESS_DELAY"] = DefaultSetting(name="SUPPRESS_DELAY", default=10.0, description="delay to suppress embeds (min)", 
       transFun=lambda x: float(x), checkFun=lambda x: x>=0, checkDescription="a non-negative number")
+    self.default_settings["SUPPRESS_POSITION"] = DefaultSetting(name="SUPPRESS_POSITION", default=10, description="position to suppress embeds", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer")
+    self.default_settings["SUPPRESS_LIMIT"] = DefaultSetting(name="SUPPRESS_LIMIT", default=5, description="limit of link embeds kept", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer")
+    self.default_settings["SUPPRESS_CHANNEL"] = DefaultSetting(name="SUPPRESS_CHANNEL", default="ALL_BUT_WHITE", description="which channel to suppress", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ALL_BUT_WHITE", "NONE_BUT_BLACK"], checkDescription="either ALL_BUT_WHITE or NONE_BUT_BLACK")
   
   def add_default_settings(self, guild):
     #Add default settings for allowed settings

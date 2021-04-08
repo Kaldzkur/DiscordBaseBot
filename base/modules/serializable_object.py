@@ -71,6 +71,8 @@ class SuppressQueueEntry(GuildEntry):
     result = {}
     for key in data:
       assert isinstance(data[key], list)
+      if len(data[key]) == 0:
+        continue
       new_list = []
       result[int(key)] = new_list
       for element in data[key]:
@@ -94,8 +96,20 @@ class RoleLinksEntry(GuildEntry):
   def from_data(cls, data):
     assert isinstance(data, list)
     for link in data:
-      assert("role" in link and "channel" in link and "emoji" in link and ("mod_role" in link or "message" in link))
+      assert "role" in link and "channel" in link and "emoji" in link and ("mod_role" in link or "message" in link)
     return data
+    
+
+class ChannelWhiteListEntry(GuildEntry):
+  
+  @classmethod
+  def from_data(cls, data):
+    assert isinstance(data, dict)
+    result = {}
+    for key in data:
+      assert isinstance(data[key], int)
+      result[int(key)] = data[key]
+    return result
   
   
 class SerializableObject(dict):

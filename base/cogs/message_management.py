@@ -3,13 +3,11 @@ import discord
 import json
 import os
 import typing
-import asyncio
-from urllib.parse import urlparse
 from queue import Queue
 from discord.ext import commands
 from base.modules.access_checks import has_mod_role, check_channel_permissions
 from datetime import datetime, timezone
-from base.modules.serializable_object import MessageCache, MessageSchedule, CommandSchedule, SuppressQueueEntry, dump_json
+from base.modules.serializable_object import MessageCache, MessageSchedule, CommandSchedule, dump_json
 from base.modules.basic_converter import FutureTimeConverter, PastTimeConverter, EmojiUnion, TimedeltaConverter
 from base.modules.constants import CACHE_PATH as path
 from base.modules.message_helper import get_message_attachments, send_temp_message, wait_user_confirmation,\
@@ -26,7 +24,6 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       os.mkdir(path)
     self.delete_cache = MessageCache.from_json(f'{path}/delete_cache.json')
     self.scheduler = MessageSchedule.from_json(f'{path}/scheduler.json')
-    self.suppress_queue = SuppressQueueEntry.from_json(f'{path}/suppress_queue.json')
     self.delete_queue = Queue(maxsize=100)
     for guild in self.bot.guilds:
       self.init_guild(guild)
@@ -36,8 +33,6 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       self.delete_cache[guild.id] = []
     if guild.id not in self.scheduler:
       self.scheduler[guild.id] = []
-    if guild.id not in self.suppress_queue:
-      self.suppress_queue[guild.id] = {}
     # set up the timers for these schedulers
     for schedule in self.scheduler[guild.id]:
       schedule.set_timer(guild, self.bot, self.scheduler[guild.id])
@@ -48,13 +43,9 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         msg.cancel()
     dump_json(self.delete_cache, f'{path}/delete_cache.json')
     dump_json(self.scheduler, f'{path}/scheduler.json')
-    dump_json(self.suppress_queue, f'{path}/suppress_queue.json')
       
   def get_max_cache(self, guild):
     return self.bot.get_setting(guild, "NUM_DELETE_CACHE")
-    
-  def get_auto_suppress(self, guild):
-    return self.bot.get_setting(guild, "AUTO_SUPPRESS")
 
   async def cog_command_error(self, context, error):
     if hasattr(context.command, "on_error"):
@@ -128,47 +119,6 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       await self.bot.log_message(guild, "MESSAGE_LOG",
         title="A message was deleted", fields=fields
       )
-  """
-  @commands.Cog.listener()
-  async def on_message(self, message):
-    # this will suppress the embed (usually a gif) of a message if the content is a pure link
-    if not message.guild:
-      return
-    suppress_delay = self.get_auto_suppress(message.guild)
-    if suppress_delay > 0 and message.channel.permissions_for(message.guild.me).manage_messages:
-      if self.need_suppress(message.content):
-        await asyncio.sleep(suppress_delay*60)
-        try:
-          await message.edit(suppress=True)
-        except:
-          pass
-  """
-          
-  @commands.Cog.listener()
-  async def on_message(self, message):
-    # this will suppress the embed (usually a gif) of a message if the content is a pure link
-    if not message.guild:
-      return
-    suppress_position = self.get_auto_suppress(message.guild)
-    if message.channel.id not in self.suppress_queue[message.guild.id]:
-      self.suppress_queue[message.guild.id][message.channel.id] = []
-    message_list = self.suppress_queue[message.guild.id][message.channel.id]
-    for message_info in message_list:
-      message_info[1] += 1
-    if self.need_suppress(message.content):
-      message_list.append([message.id, 1])
-    while message_list and message_list[0][1] > suppress_position:
-      message_info = message_list.pop(0)
-      try:
-        suppress_message = await message.channel.fetch_message(message_info[0])
-        await suppress_message.edit(suppress=True)
-      except:
-        pass
-          
-  def need_suppress(self, content):
-    url = urlparse(content)
-    return bool(url.netloc)
-     
 
   @commands.group(
     name="delete",

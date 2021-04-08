@@ -2,11 +2,13 @@ from datetime import datetime
 import json
 import os
 import discord
+import asyncio
+from urllib.parse import urlparse
 from discord.ext import commands
 from base.modules.access_checks import has_mod_role, has_admin_role
 from base.modules.constants import CACHE_PATH as path
 from base.modules.message_helper import save_message
-from base.modules.serializable_object import dump_json, MonitorEntry
+from base.modules.serializable_object import dump_json, MonitorEntry, SuppressQueueEntry, ChannelWhiteListEntry
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,15 +19,23 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
     if not os.path.isdir(path):
       os.mkdir(path)
     self.monitor = MonitorEntry.from_json(f"{path}/monitor.json")
+    self.suppress_queue = SuppressQueueEntry.from_json(f'{path}/suppress_queue.json')
+    self.white_list = ChannelWhiteListEntry.from_json(f'{path}/white_list.json')
     for guild in self.bot.guilds:
       self.init_guild(guild)
     
   def init_guild(self, guild):
     if guild.id not in self.monitor:
       self.monitor[guild.id] = []
+    if guild.id not in self.suppress_queue:
+      self.suppress_queue[guild.id] = {}
+    if guild.id not in self.white_list:
+      self.white_list[guild.id] = {}
   
   def cog_unload(self):
     dump_json(self.monitor, f'{path}/monitor.json')
+    dump_json(self.suppress_queue, f'{path}/suppress_queue.json')
+    dump_json(self.white_list, f'{path}/white_list.json')
 
   async def cog_command_error(self, context, error):
     if hasattr(context.command, "on_error"):
@@ -44,11 +54,84 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       
   @commands.Cog.listener()
   async def on_message(self, message):
-    if hasattr(message, "guild") and message.guild:
-      if message.guild.id not in self.monitor:
-        return
-      if message.channel.id in self.monitor[message.guild.id]:
-        await save_message(self.bot, message)
+    if not message.guild:
+      return
+    await self.message_save(message)
+    await self.message_suppress(message)
+    
+  def get_suppress_mode(self, guild):
+    return self.bot.get_setting(guild, "SUPPRESS_MODE")
+    
+  def get_suppress_delay(self, guild):
+    return self.bot.get_setting(guild, "SUPPRESS_DELAY")
+    
+  def get_suppress_position(self, guild):
+    return self.bot.get_setting(guild, "SUPPRESS_POSITION")
+    
+  def get_suppress_limit(self, guild):
+    return self.bot.get_setting(guild, "SUPPRESS_LIMIT")
+    
+  def get_suppress_channel(self, guild):
+    return self.bot.get_setting(guild, "SUPPRESS_CHANNEL")
+      
+  async def message_save(self, message):
+    if message.guild.id not in self.monitor:
+      return
+    if message.channel.id in self.monitor[message.guild.id]:
+      await save_message(self.bot, message)
+    
+        
+  async def message_suppress(self, message):
+    # this will suppress the embed (usually a gif) of a message if the content is a pure link
+    if self.channel_in_white_list(message.channel):
+      return
+    if message.channel.permissions_for(message.guild.me).manage_messages:
+      mode = self.get_suppress_mode(message.guild)
+      if mode == "DELAY":
+        await self.message_suppress_on_delay(message)
+      elif mode == "POSITION":
+        await self.message_suppress_on_position(message)
+        
+  def channel_in_white_list(self, channel):
+    suppress_channel = self.get_suppress_channel(channel.guild)
+    guild_white_list = self.white_list[channel.guild.id]
+    ch_state = guild_white_list[channel.id] if channel.id in guild_white_list else 0 # >0 means in white list, <0 means in black list
+    if (suppress_channel == "ALL_BUT_WHITE" and ch_state > 0) or (suppress_channel == "NONE_BUT_BLACK" and ch_state >= 0):
+      return True
+    else:
+      return False
+    
+  async def message_suppress_on_delay(self, message):
+    suppress_delay = self.get_suppress_delay(message.guild)
+    if self.need_suppress(message.content):
+      await asyncio.sleep(suppress_delay*60)
+      try:
+        await message.edit(suppress=True)
+      except:
+        pass
+    
+  async def message_suppress_on_position(self, message):
+    suppress_position = self.get_suppress_position(message.guild)
+    embed_limit = self.get_suppress_limit(message.guild)
+    if message.channel.id not in self.suppress_queue[message.guild.id]:
+      self.suppress_queue[message.guild.id][message.channel.id] = []
+    message_list = self.suppress_queue[message.guild.id][message.channel.id]
+    for message_info in message_list:
+      message_info[1] += 1
+    if self.need_suppress(message.content):
+      message_list.append([message.id, 1])
+    while message_list and (message_list[0][1] > suppress_position or len(message_list) > embed_limit):
+      message_info = message_list.pop(0)
+      try:
+        suppress_message = await message.channel.fetch_message(message_info[0])
+        await suppress_message.edit(suppress=True)
+      except:
+        pass
+          
+  def need_suppress(self, content):
+    url = urlparse(content)
+    return bool(url.netloc)
+     
 
   @commands.group(
     name="channel",
@@ -190,7 +273,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   @_channel.group(
     name="monitor",
     brief="Starts monitoring channel",
-    help="Starts monitoring the current channel by saving all the coming messages ",
+    help="Starts monitoring the current channel by saving all the coming messages.",
     invoke_without_command=True,
   )
   @commands.has_permissions(manage_channels=True)
@@ -235,7 +318,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   @commands.bot_has_permissions(manage_channels=True)
   @has_mod_role()
   async def _channel_monitor_list(self, context):
-    if context.guild.id not in self.monitor or not self.monitor[context.guild.id]:
+    if not self.monitor[context.guild.id]:
       await context.send("No channel in this guild is under monitor.")
     else:
       channels = [context.guild.get_channel(channel_id) for channel_id in self.monitor[context.guild.id]]
@@ -243,6 +326,99 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
         await context.send("No channel in this guild is under monitor.")
       else:
         await context.send(f"Monitored channel(s):\n" + "\n".join(channel.mention for channel in channels if channel))
+        
+  @_channel.group(
+    name="white",
+    brief="Adds channel to white list",
+    help="Adds the current channel to white list so that link embeds are always ignored here",
+    invoke_without_command=True,
+  )
+  @commands.has_permissions(manage_channels=True)
+  @commands.bot_has_permissions(manage_channels=True)
+  @has_mod_role()
+  async def _channel_white(self, context):
+    if context.message.channel.id not in self.white_list[context.guild.id]:
+      self.white_list[context.guild.id][context.message.channel.id] = 0
+    state = self.white_list[context.guild.id][context.message.channel.id]
+    if state > 0:
+      await context.send("This channel is already in white list.")
+      return
+    elif state == 0:
+      self.white_list[context.guild.id][context.message.channel.id] = 1
+      action = "put channel in white list"
+      await context.send("This channel is put in the white list.")
+    else:
+      self.white_list[context.guild.id][context.message.channel.id] = 0
+      action = "remove channel from black list"
+      await context.send("This channel is removed from black list.")
+    fields = {"Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}"}
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action=action,
+      fields=fields, timestamp=context.message.created_at
+    )
+    
+  @_channel_white.command(
+    name="list",
+    brief="Shows channel white/black list",
+  )
+  @commands.has_permissions(manage_channels=True)
+  @commands.bot_has_permissions(manage_channels=True)
+  @has_mod_role()
+  async def _channel_white_list(self, context):
+    white_list = []
+    black_list = []
+    for channel_id, state in self.white_list[context.guild.id].items():
+      channel = context.guild.get_channel(channel_id)
+      if channel:
+        if state > 0:
+          white_list.append(channel)
+        elif state < 0:
+          black_list.append(channel)
+    if not white_list and not black_list:
+      await context.send("White/black list is empty in this server.")
+    else:
+      white_list = "\n".join([channel.mention for channel in white_list]) if white_list else "None"
+      black_list = "\n".join([channel.mention for channel in black_list]) if black_list else "None"
+      await context.send(f"White list:\n{white_list}\n\nBlack list:\n{black_list}")
+    
+  @_channel.group(
+    name="black",
+    brief="Adds channel to black list",
+    help="Adds the current channel to black list so that link embeds are always suppressed here",
+    invoke_without_command=True,
+  )
+  @commands.has_permissions(manage_channels=True)
+  @commands.bot_has_permissions(manage_channels=True)
+  @has_mod_role()
+  async def _channel_black(self, context):
+    if context.message.channel.id not in self.white_list[context.guild.id]:
+      self.white_list[context.guild.id][context.message.channel.id] = 0
+    state = self.white_list[context.guild.id][context.message.channel.id]
+    if state < 0:
+      await context.send("This channel is already in black list.")
+      return
+    elif state == 0:
+      self.white_list[context.guild.id][context.message.channel.id] = -1
+      action = "put channel in black list"
+      await context.send("This channel is put in the black list.")
+    else:
+      self.white_list[context.guild.id][context.message.channel.id] = 0
+      action = "remove channel from white list"
+      await context.send("This channel is removed from white list.")
+    fields = {"Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}"}
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action=action,
+      fields=fields, timestamp=context.message.created_at
+    )
+  @_channel_black.command(
+    name="list",
+    brief="Shows channel white/black list",
+  )
+  @commands.has_permissions(manage_channels=True)
+  @commands.bot_has_permissions(manage_channels=True)
+  @has_mod_role()
+  async def _channel_black_list(self, context):
+    await context.invoke(self._channel_white_list)
 
 def setup(bot):
   bot.add_cog(ChannelManagementCog(bot))
