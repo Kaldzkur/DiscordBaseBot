@@ -130,8 +130,9 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
           
   def need_suppress(self, content):
     url = urlparse(content)
-    return bool(url.netloc)
-     
+    return bool(url.netloc) and ("tenor.com" in url.netloc or "giphy.com" in url.netloc or
+                                 url.path.endswith(('.png', '.jpg', '.jpeg', '.tiff', '.tif', '.bmp', '.gif')))
+    
 
   @commands.group(
     name="channel",
