@@ -622,8 +622,9 @@ class BaseBot(commands.Bot):
       self.adjust_user_stats(message.guild, message.author, 1, cmd, wrd, 0, 0)         
       #now process commands(only for guild messages)
       if cmd:
-        logger.debug(f"Processing message: {message.content}.")
-        await self.process_commands(message)
+        if not message.author.bot:
+          logger.debug(f"Processing message: {message.content}.")
+          await self.process_commands(message)
       elif message.channel.type == discord.ChannelType.news: # do not publish a command
         if message.channel.permissions_for(message.guild.me).manage_messages:
           try:
