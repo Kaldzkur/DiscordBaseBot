@@ -76,12 +76,13 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       await self.update_guild_mutes(guild)
     except Exception as error:
       await self.bot.on_task_error("Update muted users", error, guild)
-    logger.debug(f"Updating statistics in {guild.name} ({guild.id}).")
-    try:
-      self.bot.update_user_stats(guild)
-      await self.bot.log_message(guild, "MOD_LOG", title="Updated user statistics")
-    except Exception as error:
-      await self.bot.on_task_error("Update user statistics", error, guild)
+    if self.update_tasks[guild.id].current_loop > 0:
+      logger.debug(f"Updating statistics in {guild.name} ({guild.id}).")
+      try:
+        self.bot.update_user_stats(guild)
+        await self.bot.log_message(guild, "MOD_LOG", title="Updated user statistics")
+      except Exception as error:
+        await self.bot.on_task_error("Update user statistics", error, guild)
     logger.debug(f"Finished user updates for {guild.name} ({guild.id}).")
     
     
