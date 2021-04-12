@@ -149,9 +149,10 @@ class BaseBot(commands.Bot):
 
   async def set_setting(self, guild, setting_name, value, context=None):
     # type check and adapt the settings in the bot's guild if there is a change in settings db
-    if setting_name in self.default_settings and context is not None:
-      value = await self.default_settings[setting_name].adapt_setting(value, context)
-    self.settings[guild.id].set(setting_name, value)
+    if self.settings[guild.id].get(setting_name) != value:
+      if setting_name in self.default_settings and context is not None:
+        value = await self.default_settings[setting_name].adapt_setting(value, context)
+      self.settings[guild.id].set(setting_name, value)
     return value
 
   def add_setting(self, guild, setting_name, value, description=None):
