@@ -44,18 +44,18 @@ async def message_to_row(message):
     except:
       pass
   files = json.dumps(filenames)
-  return (message.id, pytz.utc.localize(message.created_at).timestamp(), message.author.id, str(message.author),
-    message.channel.id, message.channel.name, message.content, embeds, files)
+  return (message.id, pytz.utc.localize(message.created_at).timestamp(), message.author.id,
+    message.channel.id, message.content, embeds, files)
     
 def get_message_from_row(row, bot, guild):
   if isinstance(row, dict):
     row = row.values()
-  mid, ctime, aid, aname, cid, cname, content, embeds, files = row
+  mid, ctime, aid, cid, content, embeds, files = row
   ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(ctime))
   author = bot.get_user(aid)
-  author = author.mention if author else aname
+  author = author.mention if author else "Unknown"
   channel = guild.get_channel(cid)
-  channel = channel.mention if channel else cname
+  channel = channel.mention if channel else "Unknown"
   embeds = json_load_list(embeds)
   files = json_load_list(files)
   return mid, ctime, author, channel, content, embeds, files
@@ -99,7 +99,7 @@ def clean_message_files(row):
   if isinstance(row, dict):
     files = row["files"]
   else:
-    files = row[8]
+    files = row[-1]
   files = json_load_list(files)
   for file_name in files:
     try:
