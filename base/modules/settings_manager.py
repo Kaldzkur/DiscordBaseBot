@@ -29,13 +29,15 @@ class DefaultSetting:
       value = self.transFun(value)
     return value
     
-  async def adapt_setting(self, value, context):
+  async def adapt_setting(self, value, context, oldvalue=None):
     try:
       # transform the value
       value = self.transform_setting(value)
       # check the value is valid or not
       if self.checkFun is not None:
         assert self.checkFun(value)
+      if value == oldvalue:
+        return value
     except:
       if self.checkDescription:
         raise TypeError(f"setting {self.name} has to be {self.checkDescription}.")

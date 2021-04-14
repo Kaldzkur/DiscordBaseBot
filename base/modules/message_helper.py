@@ -1,5 +1,4 @@
 import time
-from datetime import datetime, timezone
 import pytz
 import asyncio
 import json
@@ -34,6 +33,12 @@ async def get_message_attachments(message):
     files.append(await attachment.to_file())
   return (embedOrigin, files)
   
+def naive_time_to_seconds(date):
+  return pytz.utc.localize(date).timestamp()
+  
+def seconds_to_date_string(seconds):
+  return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(seconds))
+  
 async def message_to_row(message):
   embeds = json.dumps([embed.to_dict() for embed in message.embeds])
   filenames = []
@@ -44,18 +49,18 @@ async def message_to_row(message):
     except:
       pass
   files = json.dumps(filenames)
-  return (message.id, pytz.utc.localize(message.created_at).timestamp(), message.author.id,
+  return (message.id, naive_time_to_seconds(message.created_at), message.author.id,
     message.channel.id, message.content, embeds, files)
     
 def get_message_from_row(row, bot, guild):
   if isinstance(row, dict):
     row = row.values()
   mid, ctime, aid, cid, content, embeds, files = row
-  ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(ctime))
-  author = bot.get_user(aid)
-  author = author.mention if author else "Unknown"
+  ctime = seconds_to_date_string(ctime)
+  author = guild.get_member(aid)
+  author = author.mention if author else f"Unknown ID {aid}"
   channel = guild.get_channel(cid)
-  channel = channel.mention if channel else "Unknown"
+  channel = channel.mention if channel else f"Unknown ID {cid}"
   embeds = json_load_list(embeds)
   files = json_load_list(files)
   return mid, ctime, author, channel, content, embeds, files
@@ -189,4 +194,5 @@ async def save_message(bot, message):
   # ensure the synchronization of this method
   row = await message_to_row(message)
   bot.db[message.channel.guild.id].insert_or_update("messages", *row)
+  
   

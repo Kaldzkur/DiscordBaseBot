@@ -149,9 +149,10 @@ class BaseBot(commands.Bot):
 
   async def set_setting(self, guild, setting_name, value, context=None):
     # type check and adapt the settings in the bot's guild if there is a change in settings db
-    if self.settings[guild.id].get(setting_name) != value:
-      if setting_name in self.default_settings and context is not None:
-        value = await self.default_settings[setting_name].adapt_setting(value, context)
+    oldvalue = self.settings[guild.id].get(setting_name)
+    if setting_name in self.default_settings and context is not None:
+      value = await self.default_settings[setting_name].adapt_setting(value, context, oldvalue)
+    if value != oldvalue:
       self.settings[guild.id].set(setting_name, value)
     return value
 
@@ -355,6 +356,8 @@ class BaseBot(commands.Bot):
       self.db[guild.id].create_table("user_commands", "cmdname", cmdname="txt", message="txt", attributes="txt", isgroup="int_not_null", lock="int_not_null", glob="int_not_null", perm="int_not_null")
     if "messages" not in self.db[guild.id]:
       self.db[guild.id].create_table("messages", "mid", mid="int", time="real", aid="int", cid="int", content="txt", embeds="txt", files="txt")
+    if "media" not in self.db[guild.id]:
+      self.db[guild.id].create_table("media", "mid", mid="int", time="real", aid="int", cid="int", media="txt", pos="int", suppress="int")
 
 
   async def create_logs(self, guild):
@@ -777,7 +780,7 @@ class BaseBot(commands.Bot):
       adaptFun=self.change_bot_name_fun("BOT_CATEGORY_NAME"))
     self.default_settings["NUM_DELETE_CACHE"] = DefaultSetting(name="NUM_DELETE_CACHE", default=10, description="num of restorable deleted messages", 
       transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer")
-    self.default_settings["MODMAIL_EXPIRY"] = DefaultSetting(name="MODMAIL_EXPIRY", default=15, description="modmail expiry (min)", 
+    self.default_settings["MODMAIL_EXPIRY"] = DefaultSetting(name="MODMAIL_EXPIRY", default=15.0, description="modmail expiry (min)", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
       
     async def auto_modmail_change(value, context):
@@ -814,6 +817,14 @@ class BaseBot(commands.Bot):
       transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer")
     self.default_settings["SUPPRESS_CHANNEL"] = DefaultSetting(name="SUPPRESS_CHANNEL", default="ALL_BUT_WHITE", description="which channel to suppress", 
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ALL_BUT_WHITE", "NONE_BUT_BLACK"], checkDescription="either ALL_BUT_WHITE or NONE_BUT_BLACK")
+    self.default_settings["MEDIA_CLEAN"] = DefaultSetting(name="MEDIA_CLEAN", default="ON", description="on/off media db cleaning", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF",
+      adaptFun=lambda value, context: self.get_cog("Channel Management Commands").change_media_clean(value, context.guild))
+    self.default_settings["MEDIA_CYCLE"] = DefaultSetting(name="MEDIA_CYCLE", default=24.0, description="interval of media cleaning (h)", 
+      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number",
+      adaptFun=lambda value, context: self.get_cog("Channel Management Commands").change_media_cycle(value, context.guild))
+    self.default_settings["MEDIA_RATE_LIMIT"] = DefaultSetting(name="MEDIA_RATE_LIMIT", default=10, description="rate limit of media message/h", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer")
   
   def add_default_settings(self, guild):
     #Add default settings for allowed settings
