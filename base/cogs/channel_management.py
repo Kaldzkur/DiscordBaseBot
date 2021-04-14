@@ -297,7 +297,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
     if not history:
       member_info = f" for {member.mention}" if member else ""
       channel_info = f" in {channel.mention}" if channel else ""
-      await context.send(f"There is no media record found{member_info}{channel_info}!")
+      await context.send(f"There is no media record found in last {hours} hour(s){member_info}{channel_info}!")
       return
     total_num = sum(row[-1] for row in history)
     rate = float(total_num)/hours
