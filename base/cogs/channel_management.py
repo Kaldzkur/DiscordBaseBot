@@ -249,8 +249,17 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       pass
       
   def get_media_history(self, guild, member=None, channel=None, tspan=3600):
+    now = datetime.now().timestamp()
     if not member and not channel:
-      return None
+      result1 = self.bot.db[guild.id].query(f"SELECT aid, COUNT(mid) AS num FROM media WHERE time>{now-tspan} "
+                                            f"GROUP BY aid ORDER BY num DESC")
+      if not result1:
+        return [], [] # don't need to send the second query if there is no data
+      user_history = [[guild.get_member(aid), num] for aid, num in result1]
+      result2 = self.bot.db[guild.id].query(f"SELECT cid, COUNT(mid) AS num FROM media WHERE time>{now-tspan} "
+                                            f"GROUP BY cid ORDER BY num DESC")
+      channel_history = [[guild.get_channel(cid), num] for cid, num in result2]
+      return user_history, channel_history
     elif member and channel:
       select_clause = f"COUNT(mid) AS num"
       where_clause = f"aid={member.id} and cid={channel.id}"
@@ -266,7 +275,6 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       where_clause = f"cid={channel.id}"
       group_clause = "aid"
       row_trans = lambda row: [guild.get_member(row[0]), row[1]]
-    now = datetime.now().timestamp()
     results = self.bot.db[guild.id].query(f"SELECT {select_clause} FROM media WHERE time>{now-tspan} and ({where_clause}) "
                                           f"GROUP BY {group_clause} ORDER BY num DESC")
     return [row_trans(row) for row in results]
@@ -291,33 +299,35 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   )
   @has_mod_role()
   async def _media(self, context, member:typing.Optional[discord.Member], channel:typing.Optional[discord.TextChannel], hours:float=1.0):
-    if not member and not channel:
-      member = context.author
     history = self.get_media_history(context.guild, member, channel, hours*3600)
-    if not history:
+    if not history or (isinstance(history, tuple) and not history[0]):
       member_info = f" for {member.mention}" if member else ""
       channel_info = f" in {channel.mention}" if channel else ""
-      await context.send(f"There is no media record found{member_info}{channel_info}!")
+      await context.send(f"There is no media record found in last {hours} hour(s){member_info}{channel_info}!")
       return
-    total_num = sum(row[-1] for row in history)
-    rate = float(total_num)/hours
     if member and channel:
       description = f"From Member: {member.mention}\nIn Channel: {channel.mention}"
-      table_title = ""
-      history_table = ""
+      history_table = {}
+      total_num = history[0][-1]
     elif member:
       description = f"From member: {member.mention}"
-      table_title = "Top Used Channels"
-      history_table = self.get_history_table(history, "channel")
-    else:
+      history_table = {"Top Used Channels": self.get_history_table(history, "channel")}
+      total_num = sum(row[-1] for row in history)
+    elif channel:
       description = f"In channel: {channel.mention}"
-      table_title = "Top Senders"
-      history_table = self.get_history_table(history, "user")
+      history_table = {"Top Senders": self.get_history_table(history, "user")}
+      total_num = sum(row[-1] for row in history)
+    else:
+      user_history, channel_history = history
+      history_table = {"Top Used Channels": self.get_history_table(channel_history, "channel"),
+                       "Top Senders": self.get_history_table(user_history, "user")}
+      total_num = sum(row[-1] for row in user_history) + sum(row[-1] for row in channel_history)
+    rate = float(total_num)/hours
     embed = discord.Embed(title=f"Media history in last {hours} hour(s)",
                           description=f"{description}\nTotal Number: {total_num}\nRate: {rate:.2f} per hour",
                           colour=discord.Colour.green(), timestamp=context.message.created_at)
-    if table_title and history_table:
-      embed.add_field(name=f"{table_title}:", value=f"{history_table}", inline=False)
+    for table_title, table_content in history_table.items():
+      embed.add_field(name=f"{table_title}:", value=f"{table_content}", inline=False)
     embed.set_footer(text="MEDIA RATE")
     await context.send(embed=embed)
       
