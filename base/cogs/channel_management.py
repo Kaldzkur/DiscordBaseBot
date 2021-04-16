@@ -75,10 +75,22 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   async def clean_media_table(self, guild):
     try:
       now = datetime.now().timestamp()
-      cycle = self.get_media_cycle(guild) * 3600
-      self.bot.db[guild.id].query(f"DELETE FROM media WHERE time<={now-cycle}")
-      await self.bot.log_message(guild, "MOD_LOG", title="Cleaned media records")
+      cycle = self.get_media_cycle(guild)
+      tbegin = now - cycle * 3600
+      self.bot.db[guild.id].query(f"DELETE FROM media WHERE time<={tbegin}")
       logger.debug(f"Finished cleaning media table in {guild.name} ({guild.id}).")
+      # show details of records during the last cycle
+      user_history, channel_history = self.get_media_history(guild, tbegin=tbegin)
+      if not user_history:
+        await self.bot.log_message(guild, "MOD_LOG", title="Cleaned media records")
+        return
+      total_num = sum(row[-1] for row in user_history) + sum(row[-1] for row in channel_history)
+      rate = float(total_num)/cycle
+      fields = {"Top Used Channels": self.get_history_table(channel_history, "channel"),
+                "Top Senders": self.get_history_table(user_history, "user")}
+      await self.bot.log_message(guild, "MOD_LOG", title="Cleaned media records",
+                                 description=f"**Media history in last {cycle} hour(s):**\nTotal Number: {total_num}\nRate: {rate:.2f} per hour",
+                                 fields=fields)
     except Exception as error:
       await self.bot.on_task_error("Clean media table", error, guild)
   
@@ -197,7 +209,8 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
     guild = message.guild
     member = message.author
     rate_limit = self.get_media_rate_limit(guild)
-    member_history = self.get_media_history(guild, member=member, channel=None)
+    tbegin = datetime.now().timestamp() - 3600
+    member_history = self.get_media_history(guild, member=member, channel=None, tbegin=tbegin)
     member_rate = sum(num for _, num in member_history)
     if member_rate > rate_limit:
       fields = {
@@ -208,7 +221,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
         title=f"@{member.display_name} reached media rate limit",
         description=f"Number of media messages in the last hour: {member_rate}",
         fields=fields, timestamp=datetime.utcnow())
-    channel_history = self.get_media_history(guild, member=None, channel=channel)
+    channel_history = self.get_media_history(guild, member=None, channel=channel, tbegin=tbegin)
     channel_rate = sum(num for _, num in channel_history)
     if channel_rate > rate_limit:
       fields = {
@@ -248,15 +261,14 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
     except:
       pass
       
-  def get_media_history(self, guild, member=None, channel=None, tspan=3600):
-    now = datetime.now().timestamp()
+  def get_media_history(self, guild, member=None, channel=None, tbegin=0):
     if not member and not channel:
-      result1 = self.bot.db[guild.id].query(f"SELECT aid, COUNT(mid) AS num FROM media WHERE time>{now-tspan} "
+      result1 = self.bot.db[guild.id].query(f"SELECT aid, COUNT(mid) AS num FROM media WHERE time>{tbegin} "
                                             f"GROUP BY aid ORDER BY num DESC")
       if not result1:
         return [], [] # don't need to send the second query if there is no data
       user_history = [[guild.get_member(aid), num] for aid, num in result1]
-      result2 = self.bot.db[guild.id].query(f"SELECT cid, COUNT(mid) AS num FROM media WHERE time>{now-tspan} "
+      result2 = self.bot.db[guild.id].query(f"SELECT cid, COUNT(mid) AS num FROM media WHERE time>{tbegin} "
                                             f"GROUP BY cid ORDER BY num DESC")
       channel_history = [[guild.get_channel(cid), num] for cid, num in result2]
       return user_history, channel_history
@@ -275,7 +287,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       where_clause = f"cid={channel.id}"
       group_clause = "aid"
       row_trans = lambda row: [guild.get_member(row[0]), row[1]]
-    results = self.bot.db[guild.id].query(f"SELECT {select_clause} FROM media WHERE time>{now-tspan} and ({where_clause}) "
+    results = self.bot.db[guild.id].query(f"SELECT {select_clause} FROM media WHERE time>{tbegin} and ({where_clause}) "
                                           f"GROUP BY {group_clause} ORDER BY num DESC")
     return [row_trans(row) for row in results]
     
@@ -299,32 +311,33 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   )
   @has_mod_role()
   async def _media(self, context, member:typing.Optional[discord.Member], channel:typing.Optional[discord.TextChannel], hours:float=1.0):
-    history = self.get_media_history(context.guild, member, channel, hours*3600)
+    history = self.get_media_history(context.guild, member, channel, datetime.now().timestamp()-hours*3600)
     if not history or (isinstance(history, tuple) and not history[0]):
       member_info = f" for {member.mention}" if member else ""
       channel_info = f" in {channel.mention}" if channel else ""
       await context.send(f"There is no media record found in last {hours} hour(s){member_info}{channel_info}!")
       return
     if member and channel:
-      description = f"From Member: {member.mention}\nIn Channel: {channel.mention}"
+      description = f"From Member: {member.mention}\nIn Channel: {channel.mention}\n"
       history_table = {}
       total_num = history[0][-1]
     elif member:
-      description = f"From member: {member.mention}"
+      description = f"From member: {member.mention}\n"
       history_table = {"Top Used Channels": self.get_history_table(history, "channel")}
       total_num = sum(row[-1] for row in history)
     elif channel:
-      description = f"In channel: {channel.mention}"
+      description = f"In channel: {channel.mention}\n"
       history_table = {"Top Senders": self.get_history_table(history, "user")}
       total_num = sum(row[-1] for row in history)
     else:
+      description = ""
       user_history, channel_history = history
       history_table = {"Top Used Channels": self.get_history_table(channel_history, "channel"),
                        "Top Senders": self.get_history_table(user_history, "user")}
       total_num = sum(row[-1] for row in user_history) + sum(row[-1] for row in channel_history)
     rate = float(total_num)/hours
     embed = discord.Embed(title=f"Media history in last {hours} hour(s)",
-                          description=f"{description}\nTotal Number: {total_num}\nRate: {rate:.2f} per hour",
+                          description=f"{description}Total Number: {total_num}\nRate: {rate:.2f} per hour",
                           colour=discord.Colour.green(), timestamp=context.message.created_at)
     for table_title, table_content in history_table.items():
       embed.add_field(name=f"{table_title}:", value=f"{table_content}", inline=False)
