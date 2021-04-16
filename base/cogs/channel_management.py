@@ -82,13 +82,13 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       # show details of records during the last cycle
       user_history, channel_history = self.get_media_history(guild, tbegin=tbegin)
       if not user_history:
-        await self.bot.log_message(guild, "MOD_LOG", title="Cleaned media records")
+        await self.bot.log_message(guild, "MESSAGE_LOG", title="Cleaned media records")
         return
       total_num = sum(row[-1] for row in user_history) + sum(row[-1] for row in channel_history)
       rate = float(total_num)/cycle
       fields = {"Top Used Channels": self.get_history_table(channel_history, "channel"),
                 "Top Senders": self.get_history_table(user_history, "user")}
-      await self.bot.log_message(guild, "MOD_LOG", title="Cleaned media records",
+      await self.bot.log_message(guild, "MESSAGE_LOG", title="Cleaned media records",
                                  description=f"**Media history in last {cycle} hour(s):**\nTotal Number: {total_num}\nRate: {rate:.2f} per hour",
                                  fields=fields)
     except Exception as error:
