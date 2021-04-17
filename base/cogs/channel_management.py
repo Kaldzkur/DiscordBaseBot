@@ -84,7 +84,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       if not user_history:
         await self.bot.log_message(guild, "MESSAGE_LOG", title="Cleaned media records")
         return
-      total_num = sum(row[-1] for row in user_history) + sum(row[-1] for row in channel_history)
+      total_num = sum(row[-1] for row in user_history)
       rate = float(total_num)/cycle
       fields = {"Top Used Channels": self.get_history_table(channel_history, "channel"),
                 "Top Senders": self.get_history_table(user_history, "user")}
@@ -334,7 +334,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
       user_history, channel_history = history
       history_table = {"Top Used Channels": self.get_history_table(channel_history, "channel"),
                        "Top Senders": self.get_history_table(user_history, "user")}
-      total_num = sum(row[-1] for row in user_history) + sum(row[-1] for row in channel_history)
+      total_num = sum(row[-1] for row in user_history)
     rate = float(total_num)/hours
     embed = discord.Embed(title=f"Media history in last {hours} hour(s)",
                           description=f"{description}Total Number: {total_num}\nRate: {rate:.2f} per hour",
