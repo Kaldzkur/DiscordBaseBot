@@ -302,7 +302,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
     table += [[f"{prefix}{obj}", str(num)] if obj else [f"UNKNOWN", str(num)] for obj, num in results]
     max_len_1 = max(len(item) for item, _ in table)
     max_len_2 = max(len(item) for _, item in table)
-    return "\n".join(f"`{obj:<{max_len_1}}  {num:<{max_len_2}}`" for obj, num in table)
+    return "\n".join(f"`{num:<{max_len_2}}  {obj:<{max_len_1}}`" for obj, num in table)
     
   @commands.command(
     name="media",
