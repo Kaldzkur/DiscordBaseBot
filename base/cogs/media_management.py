@@ -13,6 +13,10 @@ from base.modules.serializable_object import dump_json, ChannelWhiteListEntry
 import logging
 
 logger = logging.getLogger(__name__)
+      
+def isPrivateChannel(channel):
+  # check whether the channel is private in a guild
+  return not channel.overwrites_for(channel.guild.default_role).read_messages
 
 class MediaManagementCog(commands.Cog, name="Media Management Commands"):
   def __init__(self, bot):
@@ -142,11 +146,17 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
     suppress_channel = self.get_suppress_channel(channel.guild)
     guild_white_list = self.white_list[channel.guild.id]
     ch_state = guild_white_list[channel.id] if channel.id in guild_white_list else 0 # >0 means in white list, <0 means in black list
-    if (suppress_channel == "ALL_BUT_WHITE" and ch_state > 0) or (suppress_channel == "NONE_BUT_BLACK" and ch_state >= 0):
+    if ch_state > 0:
       return True
-    else:
+    if ch_state < 0:
       return False
-      
+    if isPrivateChannel(channel): # don't filter private channel generally
+      return True
+    # the remaining cases are non-private channels which are not in either white or black list, filter it only if the mode is "ALL_BUT_WHITE"
+    if suppress_channel == "ALL_BUT_WHITE":
+      return False
+    else:
+      return True
       
   async def update_media_on_message(self, message):
     # ignore channels in white list
