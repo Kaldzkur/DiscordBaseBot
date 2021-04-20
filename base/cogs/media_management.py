@@ -73,7 +73,7 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
       now = datetime.now().timestamp()
       cycle = self.get_media_cycle(guild)
       tbegin = now - cycle * 3600
-      self.bot.db[guild.id].query(f"DELETE FROM media WHERE time<={tbegin}")
+      self.bot.db[guild.id].query(f"DELETE FROM media WHERE time<={tbegin} AND suppress<=0")
       logger.debug(f"Finished cleaning media table in {guild.name} ({guild.id}).")
       # show details of records during the last cycle
       user_history, channel_history = self.get_media_history(guild, tbegin=tbegin)
@@ -175,16 +175,22 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
       return
     mode = self.get_suppress_mode(channel.guild)
     now = datetime.now().timestamp()
+    suppress_delay = self.get_suppress_delay(guild) * 60
+    where_clause_delay = f"time<={now-suppress_delay}"
+    suppress_position = self.get_suppress_position(guild)
+    embed_limit = self.get_suppress_limit(guild)
+    where_clause_position = f"pos>{suppress_position} OR mid IN (SELECT mid from temp ORDER BY pos ASC LIMIT -1 OFFSET {embed_limit})"
     if mode == "DELAY":
-      suppress_delay = self.get_suppress_delay(guild) * 60
-      where_clause = f"time<={now-suppress_delay}"
+      where_clause = where_clause_delay
     elif mode == "POSITION":
-      suppress_position = self.get_suppress_position(guild)
-      embed_limit = self.get_suppress_limit(guild)
-      where_clause = f"pos>{suppress_position} OR mid IN (SELECT mid from temp ORDER BY pos ASC LIMIT -1 OFFSET {embed_limit})"
+      where_clause = where_clause_position
+    elif mode == "ANY":
+      where_clause = f"({where_clause_delay}) OR ({where_clause_position})"
+    elif mode == "BOTH":
+      where_clause = f"({where_clause_delay}) AND ({where_clause_position})"
     else:
       return
-    results = self.bot.db[guild.id].query(f"WITH temp as (SELECT * FROM media WHERE cid={channel.id} AND suppress>0) SELECT mid FROM temp WHERE ({where_clause})")
+    results = self.bot.db[guild.id].query(f"WITH temp as (SELECT * FROM media WHERE cid={channel.id} AND suppress>0) SELECT mid FROM temp WHERE {where_clause}")
     if results:
       message_ids = [mid[0] for mid in results]
       for mid in message_ids:

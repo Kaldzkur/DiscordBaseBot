@@ -673,7 +673,7 @@ class BaseBot(commands.Bot):
                    "base.cogs.user_management", "base.cogs.message_management",
                    "base.cogs.settings_management", "base.cogs.secret_channels",
                    "base.cogs.command_management", "base.cogs.channel_management",
-                   "base.cogs.role_management")
+                   "base.cogs.role_management", "base.cogs.media_management")
 
 
   def load_cogs(self, *args, **kwargs):
@@ -808,7 +808,7 @@ class BaseBot(commands.Bot):
     self.default_settings["ACTIVE_TIME"] = DefaultSetting(name="ACTIVE_TIME", default=2, description="interactive message active time", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
     self.default_settings["SUPPRESS_MODE"] = DefaultSetting(name="SUPPRESS_MODE", default="OFF", description="mode to suppress embeds", 
-      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["OFF", "DELAY", "POSITION"], checkDescription="OFF, DELAY or POSITION")
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["OFF", "DELAY", "POSITION", "ANY", "BOTH"], checkDescription="OFF, DELAY, POSITION, ANY, or BOTH")
     self.default_settings["SUPPRESS_DELAY"] = DefaultSetting(name="SUPPRESS_DELAY", default=10.0, description="delay to suppress embeds (min)", 
       transFun=lambda x: float(x), checkFun=lambda x: x>=0, checkDescription="a non-negative number")
     self.default_settings["SUPPRESS_POSITION"] = DefaultSetting(name="SUPPRESS_POSITION", default=10, description="position to suppress embeds", 
@@ -819,10 +819,10 @@ class BaseBot(commands.Bot):
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ALL_BUT_WHITE", "NONE_BUT_BLACK"], checkDescription="either ALL_BUT_WHITE or NONE_BUT_BLACK")
     self.default_settings["MEDIA_CLEAN"] = DefaultSetting(name="MEDIA_CLEAN", default="ON", description="on/off media db cleaning", 
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF",
-      adaptFun=lambda value, context: self.get_cog("Channel Management Commands").change_media_clean(value, context.guild))
+      adaptFun=lambda value, context: self.get_cog("Media Management Commands").change_media_clean(value, context.guild))
     self.default_settings["MEDIA_CYCLE"] = DefaultSetting(name="MEDIA_CYCLE", default=24.0, description="interval of media cleaning (h)", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number",
-      adaptFun=lambda value, context: self.get_cog("Channel Management Commands").change_media_cycle(value, context.guild))
+      adaptFun=lambda value, context: self.get_cog("Media Management Commands").change_media_cycle(value, context.guild))
     self.default_settings["MEDIA_RATE_LIMIT"] = DefaultSetting(name="MEDIA_RATE_LIMIT", default=10, description="rate limit of media message/h", 
       transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer")
   
@@ -881,7 +881,8 @@ if __name__ == "__main__":
   SIN = int(os.getenv("SIN_ID"))
   cog_categories = {
     "Administration":["Database Commands", "Settings Management Commands", "Administration Commands"],
-    "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", "Moderation Commands", "Role Management Commands"],
+    "Moderation":["Message Management Commands", "User Management Commands", "Channel Management Commands", 
+                  "Moderation Commands", "Role Management Commands", "Media Management Commands"],
     "Miscellaneous":["Command Management", "General Commands"]
   }
   intents = discord.Intents.default()
