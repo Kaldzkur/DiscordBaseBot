@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
       
 def isPrivateChannel(channel):
   # check whether the channel is private in a guild
-  return not channel.overwrites_for(channel.guild.default_role).read_messages
+  return channel.overwrites_for(channel.guild.default_role).read_messages == False
 
 class MediaManagementCog(commands.Cog, name="Media Management Commands"):
   def __init__(self, bot):
