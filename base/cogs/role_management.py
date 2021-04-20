@@ -6,7 +6,6 @@ from base.modules.basic_converter import EmojiUnion
 from base.modules.constants import CACHE_PATH as path
 from base.modules.serializable_object import dump_json, RoleLinksEntry
 import os
-import json
 import logging
 
 logger = logging.getLogger(__name__)

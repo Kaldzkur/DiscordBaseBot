@@ -1,6 +1,5 @@
 import time
 import discord
-import json
 import os
 import typing
 from queue import Queue

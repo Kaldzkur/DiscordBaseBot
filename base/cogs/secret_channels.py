@@ -1,8 +1,6 @@
 import discord
 import os
 import typing
-import json
-from pathlib import Path
 from discord.ext import commands
 from base.modules.constants import CACHE_PATH as path
 from base.modules.serializable_object import SecretChannelEntry, dump_json

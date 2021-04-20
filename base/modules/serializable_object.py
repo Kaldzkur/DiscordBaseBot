@@ -62,24 +62,6 @@ class GuildEntry:
   def from_data(cls, data):
     return data
     
-
-class SuppressQueueEntry(GuildEntry):
-  
-  @classmethod
-  def from_data(cls, data):
-    assert isinstance(data, dict)
-    result = {}
-    for key in data:
-      assert isinstance(data[key], list)
-      if len(data[key]) == 0:
-        continue
-      new_list = []
-      result[int(key)] = new_list
-      for element in data[key]:
-        assert isinstance(element, list) and len(element) == 2 and isinstance(element[1], int) and element[1] > 0
-        new_list.append(element)
-      new_list.sort(reverse=True, key=lambda element: element[1])
-    return result
     
 
 class MonitorEntry(GuildEntry):

@@ -1,4 +1,3 @@
-import json
 import inspect
 from base.modules.db_manager import Database
 
