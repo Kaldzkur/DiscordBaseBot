@@ -13,10 +13,11 @@ from base.modules.serializable_object import dump_json, ChannelWhiteListEntry
 import logging
 
 logger = logging.getLogger(__name__)
-      
+
 def isPrivateChannel(channel):
   # check whether the channel is private in a guild
-  return channel.overwrites_for(channel.guild.default_role).read_messages == False
+  channel_permission = channel.overwrites_for(channel.guild.default_role)
+  return channel_permission.read_messages == False or channel_permission.send_messages == False
 
 class MediaManagementCog(commands.Cog, name="Media Management Commands"):
   def __init__(self, bot):
