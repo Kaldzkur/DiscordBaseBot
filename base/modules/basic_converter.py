@@ -40,6 +40,14 @@ def TimedeltaConverter(argument):
     raise Exception # cannot parse
   return timedelta(**time_params)
   
+def BoolConverter(argument):
+  lowered = argument.lower()
+  if lowered in ('yes', 'y', 'true', 't', '1', 'enable', 'on'):
+    return True
+  elif lowered in ('no', 'n', 'false', 'f', '0', 'disable', 'off'):
+    return False
+  raise Exception
+  
 def UnicodeEmoji(argument):
   if argument in UNICODE_EMOJI:
     return argument
