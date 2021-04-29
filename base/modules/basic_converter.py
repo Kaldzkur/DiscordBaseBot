@@ -46,7 +46,7 @@ def BoolConverter(argument):
     return True
   elif lowered in ('no', 'n', 'false', 'f', '0', 'disable', 'off'):
     return False
-  raise Exception
+  raise commands.BadArgument(f"Failed to convert to bool for argument {argument}")
   
 def UnicodeEmoji(argument):
   if argument in UNICODE_EMOJI:
