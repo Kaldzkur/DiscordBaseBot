@@ -146,6 +146,7 @@ async def update_reactions(message, old_emojis, new_emojis, reaction, user):
   # 1. clear all reactions and add new ones, the number of operations are calculated:
   clearall_op = 1 + new_len
   # 2. remove the extra reactions and add new ones, the number of operations are calculated:
+  common_num = 0
   for common_num in range(min(old_len, new_len)):
     if old_emojis[common_num] != new_emojis[common_num]:
       break
