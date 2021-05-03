@@ -26,6 +26,7 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
       os.mkdir(path)
     self.white_list = ChannelWhiteListEntry.from_json(f'{path}/white_list.json')
     self.clean_tasks = {}
+    self.alert_cd = {}
     for guild in self.bot.guilds:
       self.init_guild(guild)
     
@@ -34,6 +35,8 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
       self.white_list[guild.id] = {}
     if guild.id not in self.clean_tasks:
       self.start_new_task(guild)
+    if guild.id not in self.alert_cd:
+      self.alert_cd[guild.id] = {}
       
   def create_new_task(self, guild):
     @tasks.loop(hours=self.get_media_cycle(guild))
@@ -142,6 +145,9 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
     
   def get_media_rate_limit(self, guild):
     return self.bot.get_setting(guild, "MEDIA_RATE_LIMIT")
+    
+  def get_media_alert_cd(self, guild):
+    return self.bot.get_setting(guild, "MEDIA_ALERT_CD")
         
   def channel_in_white_list(self, channel):
     suppress_channel = self.get_suppress_channel(channel.guild)
@@ -210,33 +216,44 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
       self.bot.db[guild.id].query(f"UPDATE media SET suppress=0 WHERE mid IN ({id_list})")
       
   async def media_alert(self, message):
-    channel = message.channel
     guild = message.guild
+    alert_cd = self.get_media_alert_cd(guild) * 60
+    tnow = datetime.now().timestamp()
+    if alert_cd < 0: # no alert settings
+      return
+    channel = message.channel
     member = message.author
     rate_limit = self.get_media_rate_limit(guild)
-    tbegin = datetime.now().timestamp() - 3600
-    member_history = self.get_media_history(guild, member=member, channel=None, tbegin=tbegin)
-    member_rate = sum(num for _, num in member_history)
-    if member_rate > rate_limit:
-      fields = {
-        "User": f"{member.mention}\n{member}\nUID: {member.id}",
-        "Top Used Channels": self.get_history_table(member_history, "channel")
+    
+    # member alert
+    if member.id not in self.alert_cd[guild.id] or self.alert_cd[guild.id][member.id] + alert_cd < tnow:
+      member_history = self.get_media_history(guild, member=member, channel=None, tbegin=tnow-3600)
+      member_rate = sum(num for _, num in member_history)
+      if member_rate > rate_limit:
+        fields = {
+          "User": f"{member.mention}\n{member}\nUID: {member.id}",
+          "Top Used Channels": self.get_history_table(member_history, "channel")
         }
-      await self.bot.log_message(guild, "MESSAGE_LOG", 
-        title=f"@{member.display_name} reached media rate limit",
-        description=f"Number of media messages in the last hour: {member_rate}",
-        fields=fields, timestamp=datetime.utcnow())
-    channel_history = self.get_media_history(guild, member=None, channel=channel, tbegin=tbegin)
-    channel_rate = sum(num for _, num in channel_history)
-    if channel_rate > rate_limit:
-      fields = {
-        "Channel": f"{channel.mention}\nCID: {channel.id}",
-        "Top Senders": self.get_history_table(channel_history, "user")
+        await self.bot.log_message(guild, "MESSAGE_LOG", 
+          title=f"@{member.display_name} reached media rate limit",
+          description=f"Number of media messages in the last hour: {member_rate}",
+          fields=fields, timestamp=datetime.utcnow())
+        self.alert_cd[guild.id][member.id] = tnow
+    
+    # channel alert
+    if channel.id not in self.alert_cd[guild.id] or self.alert_cd[guild.id][channel.id] + alert_cd < tnow:
+      channel_history = self.get_media_history(guild, member=None, channel=channel, tbegin=tnow-3600)
+      channel_rate = sum(num for _, num in channel_history)
+      if channel_rate > rate_limit:
+        fields = {
+          "Channel": f"{channel.mention}\nCID: {channel.id}",
+          "Top Senders": self.get_history_table(channel_history, "user")
         }
-      await self.bot.log_message(guild, "MESSAGE_LOG", 
-        title=f"#{channel.name} reached media rate limit",
-        description=f"Number of media messages in the last hour: {channel_rate}",
-        fields=fields, timestamp=datetime.utcnow())
+        await self.bot.log_message(guild, "MESSAGE_LOG", 
+          title=f"#{channel.name} reached media rate limit",
+          description=f"Number of media messages in the last hour: {channel_rate}",
+          fields=fields, timestamp=datetime.utcnow())
+        self.alert_cd[guild.id][channel.id] = tnow
           
     
   def filter_media(self, message):

@@ -825,6 +825,8 @@ class BaseBot(commands.Bot):
       adaptFun=lambda value, context: self.get_cog("Media Management Commands").change_media_cycle(value, context.guild))
     self.default_settings["MEDIA_RATE_LIMIT"] = DefaultSetting(name="MEDIA_RATE_LIMIT", default=10, description="rate limit of media message/h", 
       transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer")
+    self.default_settings["MEDIA_ALERT_CD"] = DefaultSetting(name="MEDIA_ALERT_CD", default=10.0, description="cooldown of media alerts/min", 
+      transFun=lambda x: float(x), checkDescription="a number")
   
   def add_default_settings(self, guild):
     #Add default settings for allowed settings
