@@ -280,6 +280,14 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       )
     except: #could not send dm
       pass
+    #If a user was muted, prevent from unmuting itself by leaving and joining
+    now = time.time()
+    mutes = self.bot.db[member.guild.id].select("users_muted")
+    mute_role = self.bot.get_mute_role(member.guild)
+    if mutes:
+      for muted_user in mutes:
+        if muted_user["userid"] == member.id and now > muted_user["expires"]:
+          await member.add_roles(mute_role)
 
   #@commands.Cog.listener()
   #async def on_member_ban(self, guild, user):
