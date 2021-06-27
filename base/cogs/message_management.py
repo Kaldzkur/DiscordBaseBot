@@ -16,6 +16,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class MaxSizeList(list):
+  def __init__(self, maxsize):
+    super().__init__()
+    self.maxsize = maxsize
+    
+  def append(self, element):
+    super().append(element)
+    if super().__len__() > self.maxsize:
+      super().__delitem__(0)
+
 class MessageManagementCog(commands.Cog, name="Message Management Commands"):
   def __init__(self, bot):
     self.bot = bot
@@ -23,7 +33,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       os.mkdir(path)
     self.delete_cache = MessageCache.from_json(f'{path}/delete_cache.json')
     self.scheduler = MessageSchedule.from_json(f'{path}/scheduler.json')
-    self.delete_queue = Queue(maxsize=100)
+    self.delete_queue = MaxSizeList(maxsize=100)
     for guild in self.bot.guilds:
       self.init_guild(guild)
     
@@ -70,7 +80,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
         return
       if await self.bot.is_command(message) or message.author == self.bot.user: # ignore command message
         return
-      if message.id in self.delete_queue.queue: # ignore the messsage deleted by delete or move commands
+      if message.id in self.delete_queue: # ignore the messsage deleted by delete or move commands
         return
       fields ={
         "Author":f"{message.author.mention}\n{message.author}\nUID: {message.author.id}",
@@ -169,7 +179,7 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     minimum_time = int((time.time() - 14 * 24 * 60 * 60) * 1000.0 - 1420070400000) << 22
     bulk_msg = []
     for msg in msg_list:
-      self.delete_queue.put(msg.id)
+      self.delete_queue.append(msg.id)
       if msg.id < minimum_time: # older than 14 days
         await msg.delete()
       else:
