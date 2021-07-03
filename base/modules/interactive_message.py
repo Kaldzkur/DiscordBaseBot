@@ -42,12 +42,16 @@ class InteractiveMessage(ABC):
     '''
     pass
     
-  def set_parent(parent):
+  def set_parent(self, parent):
     # set the parent of this message
     self.parent = parent;
     self.timeout = parent.timeout # how long will the message be active
     self.context = parent.context # the context that starts the message
     self.message = parent.message # the discord message bonded to this object
+    
+  async def prepare(self):
+    # things to setup before sending the message
+    pass
     
   # you have to override at least one method below to aviod empty contents
   async def get_content(self): # return some content
@@ -77,6 +81,7 @@ class InteractiveMessage(ABC):
     return new_msg
     
   async def respond_message(self, msg=None): # send the embed
+    await self.prepare()
     _content, _embed, _file = await self.get_content(), await self.get_embed(), await self.get_file()
     if msg is None or msg.author.id != self.context.bot.user.id:
       self.message = await self.context.send(content=_content, embed=_embed, file=_file)
@@ -93,6 +98,7 @@ class InteractiveMessage(ABC):
       await self.message.add_reaction(emoji)
     
   async def update_message(self): # update the current message embed
+    await self.prepare()
     _content, _embed, _file = await self.get_content(), await self.get_embed(), await self.get_file()
     await self.message.edit(content=_content, embed=_embed, file=_file)
       
@@ -146,30 +152,6 @@ class DetermInteractiveMessage(InteractiveMessage, ABC):
       return None
     return new_msg
     
-class InteractiveSelectionMessage(InteractiveMessage):
-  def __init__(self, emojis, transfer, content=None, embed=None, file=None, parent=None, **attributes):
-    # (@param) content, embed, file: content to be sent
-    # (@param) emojis: list of child emojis
-    # (@param) transfer: [self, emoji] => [InteractiveMessage]
-    super().__init__(parent, **attributes)
-    self.content = content
-    self.embed = embed
-    self.file = file
-    self.child_emojis = emojis
-    self.transfer_fun = transfer
-    
-  async def get_content(self): # return some content
-    return self.content
-  
-  async def get_embed(self): # return an embed
-    return self.embed
-  
-  async def get_file(self): # return a file
-    return self.file
-    
-  async def transfer_to_child(self, emoji):
-    new_msg = self.transfer_fun(self, emoji)
-    return new_msg
     
 async def update_reactions(message, old_emojis, new_emojis, reaction, user):
   # there are two strategies to update the reactions
