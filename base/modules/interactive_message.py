@@ -139,6 +139,32 @@ class DetermInteractiveMessage(InteractiveMessage, ABC):
       return None
     return new_msg
     
+class InteractiveSelectionMessage(InteractiveMessage):
+  def __init__(self, emojis, transfer, content=None, embed=None, file=None, parent=None, **attributes):
+    # (@param) content, embed, file: content to be sent
+    # (@param) emojis: list of child emojis
+    # (@param) transfer: lambda [emoji] => [InteractiveMessage]
+    super().__init__(parent, **attributes)
+    self.content = content
+    self.embed = embed
+    self.file = file
+    self.child_emojis = emojis
+    self.transfer = transfer
+    
+  async def get_content(self): # return some content
+    return self.content
+  
+  async def get_embed(self): # return an embed
+    return self.embed
+  
+  async def get_file(self): # return a file
+    return self.file
+    
+  async def transfer_to_child(self, emoji):
+    new_msg = self.transfer(emoji)
+    new_msg.parent = self
+    return new_msg
+    
 async def update_reactions(message, old_emojis, new_emojis, reaction, user):
   # there are two strategies to update the reactions
   old_len = len(old_emojis)
