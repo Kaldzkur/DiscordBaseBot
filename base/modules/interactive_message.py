@@ -150,7 +150,7 @@ class InteractiveSelectionMessage(InteractiveMessage):
   def __init__(self, emojis, transfer, content=None, embed=None, file=None, parent=None, **attributes):
     # (@param) content, embed, file: content to be sent
     # (@param) emojis: list of child emojis
-    # (@param) transfer: [emoji] => [InteractiveMessage]
+    # (@param) transfer: [self, emoji] => [InteractiveMessage]
     super().__init__(parent, **attributes)
     self.content = content
     self.embed = embed
@@ -168,8 +168,7 @@ class InteractiveSelectionMessage(InteractiveMessage):
     return self.file
     
   async def transfer_to_child(self, emoji):
-    new_msg = self.transfer_fun(emoji)
-    new_msg.set_parent(self)
+    new_msg = self.transfer_fun(self, emoji)
     return new_msg
     
 async def update_reactions(message, old_emojis, new_emojis, reaction, user):
