@@ -29,6 +29,11 @@ def mod_role_check(context):
 def has_mod_role():
   return commands.check(mod_role_check)
   
+def is_one_of_members(*member_ids):
+  def member_check(context):
+    return context.author.id in member_ids
+  return commands.check(member_check)
+  
 def can_edit_commands():
   async def predicate(context):
     if context.author.id in context.bot.owner_ids:

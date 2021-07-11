@@ -353,7 +353,7 @@ class BaseBot(commands.Bot):
     if "user_statistics" not in self.db[guild.id]:
       self.db[guild.id].create_table("user_statistics", "userid", userid="int", total_messages="int", total_commands="int", total_words="int", total_reacts="int", reacts_to_own="int")
     if "user_commands" not in self.db[guild.id]:
-      self.db[guild.id].create_table("user_commands", "cmdname", cmdname="txt", message="txt", attributes="txt", isgroup="int_not_null", lock="int_not_null", glob="int_not_null", perm="int_not_null")
+      self.db[guild.id].create_table("user_commands", "cmdname", cmdname="txt", message="txt", attributes="txt", isgroup="int_not_null", lock="int_not_null", glob="int_not_null", perm="txt")
     if "messages" not in self.db[guild.id]:
       self.db[guild.id].create_table("messages", "mid", mid="int", time="real", aid="int", cid="int", content="txt", embeds="txt", files="txt")
     if "media" not in self.db[guild.id]:

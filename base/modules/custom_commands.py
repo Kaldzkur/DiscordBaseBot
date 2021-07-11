@@ -4,8 +4,8 @@ from pytz import timezone
 import operator
 import json
 import random
-from base.modules.access_checks import has_admin_role, has_mod_role
-from base.modules.basic_converter import smart_clean_content, option_converter
+from base.modules.access_checks import is_one_of_members
+from base.modules.basic_converter import option_converter
 
 def json_load_dict(string):
   if string:
@@ -25,14 +25,9 @@ def server_check_fun(guild):
   return commands.check(server_check)
 
 def permission_check_fun(permission):
-  if permission <= 0:
+  if not permission:
     return commands.check(lambda context: True)
-  elif permission == 1:
-    return has_mod_role()
-  elif permission == 2:
-    return has_admin_role()
-  else:
-    return commands.is_owner()
+  return commands.check_any(commands.is_owner(), commands.has_any_role(*permission["roles"]), is_one_of_members(*permission["members"]))
 
 def get_cmd_parent_child(root, cmd_name):
   cmd_name_split = cmd_name.split(maxsplit=1)
@@ -88,7 +83,7 @@ async def analyze_new_cmd(bot, guild, cmd_name, context=None):
     raise NameError(f"Command '{cmd_name}' already exists.")
   return (parent, child, f"{parent.qualified_name} {child}" if hasattr(parent, "qualified_name") else child)
      
-def make_user_command(guild, cmd_name, cmd_text, permission=0, **attributes):
+def make_user_command(guild, cmd_name, cmd_text, permission=None, **attributes):
   @commands.command(
     name=cmd_name
   )
@@ -96,7 +91,7 @@ def make_user_command(guild, cmd_name, cmd_text, permission=0, **attributes):
   @permission_check_fun(permission)
   async def _wrapper_user_cmd(context, options:commands.Greedy[option_converter], *args):
     msg = cmd_text.format(*args, context=context)
-    await context.send(await smart_clean_content().convert(context, msg))
+    await context.send(msg)
     if "d" in options and context.message.channel.permissions_for(context.guild.me).manage_messages:
       await context.message.delete()
   @_wrapper_user_cmd.error
@@ -110,7 +105,7 @@ def make_user_command(guild, cmd_name, cmd_text, permission=0, **attributes):
   _wrapper_user_cmd.update(**attributes)
   return _wrapper_user_cmd
     
-def make_user_group(guild, cmd_name, cmd_text, permission=0, **attributes):
+def make_user_group(guild, cmd_name, cmd_text, permission=None, **attributes):
   @commands.group(
     name=cmd_name,
     invoke_without_command=True,
@@ -129,7 +124,7 @@ def make_user_group(guild, cmd_name, cmd_text, permission=0, **attributes):
       return
     if cmd_text:
         msg = cmd_text.format(*args, context=context)
-        await context.send(await smart_clean_content().convert(context, msg))
+        await context.send(msg)
     else:
       await context.send_help(context.command)
     if "d" in options and context.message.channel.permissions_for(context.guild.me).manage_messages:
@@ -184,7 +179,7 @@ def move_subcommands(old_cmd, new_cmd):
       else:
         new_cmd.add_command(command)
 
-def set_new_cmd(guild, parent, child_name, cmd_text, attributes, is_group=False, permission=0, smart_fix=False):
+def set_new_cmd(guild, parent, child_name, cmd_text, attributes, is_group=False, permission=None, smart_fix=False):
   # check aliases here
   if "aliases" in attributes:
     if smart_fix:
@@ -203,9 +198,10 @@ def set_new_cmd(guild, parent, child_name, cmd_text, attributes, is_group=False,
   
 async def add_cmd_from_row(bot, guild, cmd):
   attributes = json_load_dict(cmd["attributes"])
+  permission = json_load_dict(cmd["perm"])
   parent, child, cmd_name = await analyze_new_cmd(bot, guild, cmd["cmdname"])
   guild = None if cmd["glob"] else guild
-  return set_new_cmd(guild, parent, child, cmd["message"], attributes, cmd["isgroup"], cmd["perm"])
+  return set_new_cmd(guild, parent, child, cmd["message"], attributes, cmd["isgroup"], permission)
   
 async def add_cmd_from_attributes(context, cmd_name, cmd_msg, attributes, isgroup):
   parent, child, cmd_name = await analyze_new_cmd(context.bot, context.guild, cmd_name, context)

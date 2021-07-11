@@ -3,6 +3,7 @@ from discord.ext import commands
 from base.modules.access_checks import has_admin_role, can_edit_commands
 from base.modules.custom_commands import json_load_dict, analyze_existing_cmd, analyze_new_cmd, set_new_cmd, add_cmd_from_attributes
 from base.modules.basic_converter import cmd_name_converter, cmd_arg_converter
+import typing
 import json
 import logging
 
@@ -78,17 +79,18 @@ class CommandCog(commands.Cog, name="Command Management"):
     if cmd["lock"]:
       raise LookupError(f"Custom command '{cmd_name}' is locked and canot be edited.")
     attributes = json_load_dict(cmd["attributes"])
+    permission = json_load_dict(cmd["perm"])
     guild = None if cmd["glob"] else context.guild
     old_cmd = parent.remove_command(child)
     try:
       new_parent, new_child, new_name = await analyze_new_cmd(self.bot, context.guild, new_name)
-      new_cmd = set_new_cmd(guild, new_parent, new_child, cmd["message"], attributes, cmd["isgroup"], cmd["perm"])
+      new_cmd = set_new_cmd(guild, new_parent, new_child, cmd["message"], attributes, cmd["isgroup"], permission)
     except Exception as e:
       parent.add_command(old_cmd)
       raise e
     # move all subcommands and update the names of commands in db
     self.move_subcommands(context.guild, new_cmd, old_cmd)
-    await self.log_cmd_update(context, new_name, cmd["message"], attributes, cmd["isgroup"], "Renamed Command")
+    await self.log_cmd_update(context, new_name, cmd["message"], attributes, cmd["isgroup"], "Renamed Command", cmd["glob"], permission)
     
   def move_subcommands(self, guild, new_cmd, old_cmd):
     self.bot.db[guild.id].query(f'UPDATE user_commands SET cmdname="{new_cmd.qualified_name}" WHERE cmdname="{old_cmd.qualified_name}"')
@@ -119,10 +121,11 @@ class CommandCog(commands.Cog, name="Command Management"):
     if not cmd_text and not cmd["isgroup"]:
       cmd_text = cmd["message"]
     attributes = json_load_dict(cmd["attributes"])
+    permission = json_load_dict(cmd["perm"])
     attributes.update(attributes_new)
     guild = None if cmd["glob"] else context.guild
-    set_new_cmd(guild, parent, child, cmd_text, attributes, cmd["isgroup"], cmd["perm"])
-    await self.after_cmd_update(context, cmd_name, cmd_text, attributes, cmd["isgroup"], "Updated Command", cmd["glob"], cmd["perm"])
+    set_new_cmd(guild, parent, child, cmd_text, attributes, cmd["isgroup"], permission)
+    await self.after_cmd_update(context, cmd_name, cmd_text, attributes, cmd["isgroup"], "Updated Command", cmd["glob"], permission)
 
   @_cmd.command(
     name="rm",
@@ -137,7 +140,7 @@ class CommandCog(commands.Cog, name="Command Management"):
       raise LookupError(f"Custom command '{cmd_name}' is locked and canot be edited.")
     parent.remove_command(child)
     self.bot.db[context.guild.id].delete_row("user_commands", cmd_name)
-    await self.log_cmd_update(context, cmd_name, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], "Removed Command")
+    await self.log_cmd_update(context, cmd_name, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], "Removed Command", cmd["glob"], json_load_dict(cmd["perm"]))
 
   @_cmd.command(
     name="alias",
@@ -153,12 +156,13 @@ class CommandCog(commands.Cog, name="Command Management"):
     if cmd["lock"]:
       raise LookupError(f"Custom command '{cmd_name}' is locked and canot be edited.")
     attributes = json_load_dict(cmd["attributes"])
+    permission = json_load_dict(cmd["perm"])
     if "aliases" not in attributes:
       attributes["aliases"] = []
     attributes["aliases"].extend(aliases)
     guild = None if cmd["glob"] else context.guild
-    set_new_cmd(guild, parent, child, cmd["message"], attributes, cmd["isgroup"], cmd["perm"])
-    await self.after_cmd_update(context, cmd_name, cmd["message"], attributes, cmd["isgroup"], "Added Aliases", cmd["glob"], cmd["perm"])
+    set_new_cmd(guild, parent, child, cmd["message"], attributes, cmd["isgroup"], permission)
+    await self.after_cmd_update(context, cmd_name, cmd["message"], attributes, cmd["isgroup"], "Added Aliases", cmd["glob"], permission)
       
   @_cmd.command(
     name="lock",
@@ -213,7 +217,7 @@ class CommandCog(commands.Cog, name="Command Management"):
     if cmd["glob"]:
       await context.send(f"Command '{cmd_name}' is already global.")
       return
-    set_new_cmd(None, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], cmd["perm"])
+    set_new_cmd(None, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], json_load_dict(cmd["perm"]))
     self.bot.db[context.guild.id].query(f'UPDATE user_commands SET glob=1 WHERE cmdname="{cmd_name}"')
     await context.send(f"Command '{cmd_name}' has become global.")
     await self.bot.log_message(context.guild, "ADMIN_LOG",
@@ -225,7 +229,7 @@ class CommandCog(commands.Cog, name="Command Management"):
     name="unglobal",
     brief="Ungobalizes a command",
     help="Makes a global command only accessible in the current servers.",
-    aliases=["unglob"]
+    aliases=["unglob", "local"]
   )
   @commands.is_owner()
   async def _unglobal_cmd(self, context, cmd_name:cmd_name_converter):
@@ -234,7 +238,7 @@ class CommandCog(commands.Cog, name="Command Management"):
     if not cmd["glob"]:
       await context.send(f"Command '{cmd_name}' is already server-specific.")
       return
-    set_new_cmd(context.guild, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], cmd["perm"])
+    set_new_cmd(context.guild, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], json_load_dict(cmd["perm"]))
     self.bot.db[context.guild.id].query(f'UPDATE user_commands SET glob=0 WHERE cmdname="{cmd_name}"')
     await context.send(f"Command '{cmd_name}' has become server-specific.")
     await self.bot.log_message(context.guild, "ADMIN_LOG",
@@ -245,42 +249,49 @@ class CommandCog(commands.Cog, name="Command Management"):
   @_cmd.command(
     name="perm",
     brief="Sets command permission",
-    help="Set the permission of a command.\n0 - accessible to all\n1 - accessible to mods\n2 - accessible to admins\n3 - accessible to bot owners"
+    help="Set the permission of a command to specific roles/members."
   )
   @commands.is_owner()
-  async def _perm_cmd(self, context, cmd_name:cmd_name_converter, permission:int=None):
-    if permission is None:
-      await context.send_help("cmd perm")
-      return
-    if permission < 0 or permission > 3:
-      await context.send("Permission can only be\n0 - accessible to all\n1 - accessible to mods\n2 - accessible to admins\n3 - accessible to bot owners.")
-      return
+  async def _perm_cmd(self, context, cmd_name:cmd_name_converter, groups:commands.Greedy[typing.Union[discord.Member, discord.Role]]):
     parent, child, cmd = await analyze_existing_cmd(self.bot, context.guild, cmd_name, context)
+    if not groups:
+      permission = None
+    else:
+      permission = {"members":[], "roles":[]}
+      for group in groups:
+        if isinstance(group, discord.Member):
+          permission["members"].append(group.id)
+        elif isinstance(group, discord.Role):
+          permission["roles"].append(group.id)
     cmd_name = cmd["cmdname"]
-    if permission == cmd["perm"]:
-      await context.send(f"Permission does not change for command {cmd_name}.")
-      return
     guild = None if cmd["glob"] else context.guild
     set_new_cmd(guild, parent, child, cmd["message"], json_load_dict(cmd["attributes"]), cmd["isgroup"], permission)
-    self.bot.db[context.guild.id].query(f'UPDATE user_commands SET perm={permission} WHERE cmdname="{cmd_name}"')
+    self.bot.db[context.guild.id].query(f"UPDATE user_commands SET perm='{json.dumps(permission)}' WHERE cmdname='{cmd_name}'")
     await context.send(f"Updated command '{cmd_name}' permission.")
-    fields = {"Permission Lv": permission}
+    fields = {"Permission to": " ".join([group.mention for group in groups]) if groups else str(context.guild.default_role)}
     await self.bot.log_message(context.guild, "ADMIN_LOG",
-      user=context.author, action="updated commands' permission",
+      user=context.author, action="updated a command's permission",
       description=f"Command:\n {cmd_name}", fields=fields, timestamp=context.message.created_at
     )
 
-  async def after_cmd_update(self, context, cmd_name, cmd_text, attributes, isgroup, action, glob=False, perm=0):
-    self.bot.db[context.guild.id].insert_or_update("user_commands", cmd_name, cmd_text, json.dumps(attributes), int(isgroup), 0, int(glob), perm)
-    await self.log_cmd_update(context, cmd_name, cmd_text, attributes, isgroup, action)
+  async def after_cmd_update(self, context, cmd_name, cmd_text, attributes, isgroup, action, glob=False, perm=None):
+    self.bot.db[context.guild.id].insert_or_update("user_commands", cmd_name, cmd_text, json.dumps(attributes), int(isgroup), 0, int(glob), json.dumps(perm))
+    await self.log_cmd_update(context, cmd_name, cmd_text, attributes, isgroup, action, glob, perm)
     
     
-  async def log_cmd_update(self, context, cmd_name, cmd_text, attributes, isgroup, action):
+  async def log_cmd_update(self, context, cmd_name, cmd_text, attributes, isgroup, action, glob, perm):
     await context.send(f"{action}: '{cmd_name}'.")
+    if not perm:
+      permission = [str(context.guild.default_role)]
+    else:
+      permission = [context.guild.get_member(member_id) for member_id in perm["members"]]
+      permission += [context.guild.get_role(role_id) for role_id in perm["roles"]]
+      permission = [entry.mention for entry in permission if entry is not None]
     fields = {
-      "Command":cmd_name,
+      "Global" if glob else "Local" + " Command":cmd_name,
       "Content":cmd_text[:1021] + '...' if cmd_text and len(cmd_text) > 1021 else cmd_text,
-      "Attributes":"\n".join([f"{k}={v}" for k,v in attributes.items()]) if attributes else None
+      "Attributes":"\n".join([f"{k}={v}" for k,v in attributes.items()]) if attributes else None,
+      "Permissions":" ".join(permission)
     }
     await self.bot.log_message(context.guild, "ADMIN_LOG",
       user=context.author, action=action.lower(),
