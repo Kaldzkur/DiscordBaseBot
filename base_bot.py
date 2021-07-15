@@ -61,7 +61,7 @@ class BaseBot(commands.Bot):
       return guild.me.name
     return guild.me.nick
 
-  async def log_message(self, guild, log_type, **content):
+  async def log_message(self, guild, log_type, file=None, **content):
     if log_type.upper() not in ["MOD_LOG", "ADMIN_LOG", "ERROR_LOG", "AUDIT_LOG", "MESSAGE_LOG"]:
       await self.log_message(
         guild, "ERROR_LOG",
@@ -122,15 +122,15 @@ class BaseBot(commands.Bot):
         embed.add_field(name=f"{key}:", value=f"{value}", inline=False)
     embed.set_footer(text=log_type.replace("_", " "))
     if log_type == "MOD_LOG":
-      await self.get_log(guild, "mod-log").send(embed=embed)
+      await self.get_log(guild, "mod-log").send(embed=embed, file=file)
     elif log_type == "ADMIN_LOG":
-      await self.get_log(guild, "admin-log").send(embed=embed)
+      await self.get_log(guild, "admin-log").send(embed=embed, file=file)
     elif log_type == "ERROR_LOG":
-      await self.get_log(guild, "error-log").send(embed=embed)
+      await self.get_log(guild, "error-log").send(embed=embed, file=file)
     elif log_type == "AUDIT_LOG":
-      await self.get_log(guild, "audit-log").send(embed=embed)
+      await self.get_log(guild, "audit-log").send(embed=embed, file=file)
     elif log_type == "MESSAGE_LOG":
-      await self.get_log(guild, "message-log").send(embed=embed)
+      await self.get_log(guild, "message-log").send(embed=embed, file=file)
 
   def get_setting(self, guild, setting_name):
     try:

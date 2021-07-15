@@ -276,18 +276,19 @@ class SecretChannelCog(commands.Cog, name="General Commands"):
         f"Hey {user.mention}, the {ch_type} in the {channel.guild.name} Discord is closed now. Here is your conversation as a .txt file [{msg_count} message(s)]:",
         file=discord.File(logfile)
       )
-      #os.remove(logfile)
     except discord.Forbidden:
       pass #DM could not be sent
     await channel.delete(reason=f"{ch_type} was closed")
     secret_channel = self.get_secret_channel(channel)
     if secret_channel is not None:
       self.secret_channels[channel.guild.id].remove(secret_channel)
-    await self.bot.log_message(channel.guild, "MOD_LOG",
+    await self.bot.log_message(channel.guild, "MOD_LOG", 
+      file=discord.File(logfile),
       user=user,
       action=f"deleted a {ch_type}",
       fields={"Reason":reason},
     )
+    #os.remove(logfile)
         
         
 def setup(bot):
