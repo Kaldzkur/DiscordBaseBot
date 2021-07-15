@@ -6,7 +6,7 @@ import asyncio
 import typing
 from urllib.parse import urlparse
 from discord.ext import commands, tasks
-from base.modules.access_checks import has_mod_role
+from base.modules.access_checks import has_mod_role, check_channel_permissions
 from base.modules.constants import CACHE_PATH as path
 from base.modules.message_helper import naive_time_to_seconds
 from base.modules.serializable_object import dump_json, ChannelWhiteListEntry
@@ -367,6 +367,87 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
     embed.set_footer(text="MEDIA RATE")
     await context.send(embed=embed)
       
+  @_media.command(
+    name="suppress",
+    brief="Suppress the messages' embeds",
+    help="Suppress the embeds of n messages from member(s) in a channel with skipping m messages, if member is not specified it will suppress any message, if channel is not specified it will search the current channel.",
+    usage="[@mentions]... [#channel] [number=1] [skip_num=0]",
+    aliases=["sup", "remove", "rm"]
+  )
+  @commands.has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
+  @commands.bot_has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
+  @has_mod_role()
+  async def _media_suppress(self, context, members:commands.Greedy[discord.Member], channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1, skip_num:typing.Optional[int]=0):
+    if num <= 0:
+      raise commands.UserInputError("num must be a positive number.")
+    if channel is None:
+      channel = context.channel
+    elif channel != context.channel:
+      check_channel_permissions(channel, context.author, ["read_messages", "read_message_history", "manage_messages"])
+    msg_count = 0
+    suppressed = 0
+    async for message in channel.history():
+      if suppressed >= num:
+        break
+      if message.id == context.message.id:
+        continue # skip the command
+      if len(members) == 0 or message.author in members:
+        msg_count += 1
+        if msg_count > skip_num: # skip the first m messages
+          await message.edit(suppress=True)
+          suppressed += 1
+    fields = {
+      "Author(s)":"\n".join([f"{member.mention}\n{member}\nUID: {member.id}" for member in members]) if members else None,
+      "Channel":f"{channel.mention}\nCID: {channel.id}",
+    }
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action=f"suppressed embed(s) of {suppressed} message(s)",
+      fields=fields, timestamp=context.message.created_at
+    )
+    if suppressed == 0:
+      await send_temp_message(context, "Could not suppress message(s).", 10)
+    await context.message.delete()
+    
+  @_media.command(
+    name="unsuppress",
+    brief="Unsuppress the messages' embeds",
+    help="Unsuppress the embeds of n messages from member(s) in a channel with skipping m messages, if member is not specified it will unsuppress any message, if channel is not specified it will search the current channel.",
+    usage="[@mentions]... [#channel] [number=1] [skip_num=0]",
+    aliases=["unsup", "recover", "rec"]
+  )
+  @commands.has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
+  @commands.bot_has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
+  @has_mod_role()
+  async def _media_suppress(self, context, members:commands.Greedy[discord.Member], channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1, skip_num:typing.Optional[int]=0):
+    if num <= 0:
+      raise commands.UserInputError("num must be a positive number.")
+    if channel is None:
+      channel = context.channel
+    elif channel != context.channel:
+      check_channel_permissions(channel, context.author, ["read_messages", "read_message_history", "manage_messages"])
+    msg_count = 0
+    unsuppressed = 0
+    async for message in channel.history():
+      if unsuppressed >= num:
+        break
+      if message.id == context.message.id:
+        continue # skip the command
+      if len(members) == 0 or message.author in members:
+        msg_count += 1
+        if msg_count > skip_num: # skip the first m messages
+          await message.edit(suppress=False)
+          unsuppressed += 1
+    fields = {
+      "Author(s)":"\n".join([f"{member.mention}\n{member}\nUID: {member.id}" for member in members]) if members else None,
+      "Channel":f"{channel.mention}\nCID: {channel.id}",
+    }
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action=f"unsuppressed embed(s) of {unsuppressed} message(s)",
+      fields=fields, timestamp=context.message.created_at
+    )
+    if unsuppressed == 0:
+      await send_temp_message(context, "Could not suppress message(s).", 10)
+    await context.message.delete()
    
   @_media.group(
     name="white",
