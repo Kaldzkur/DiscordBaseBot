@@ -418,7 +418,7 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
   @commands.has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
   @commands.bot_has_permissions(read_messages=True, read_message_history=True, manage_messages=True)
   @has_mod_role()
-  async def _media_suppress(self, context, members:commands.Greedy[discord.Member], channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1, skip_num:typing.Optional[int]=0):
+  async def _media_unsuppress(self, context, members:commands.Greedy[discord.Member], channel:typing.Optional[discord.TextChannel], num:typing.Optional[int]=1, skip_num:typing.Optional[int]=0):
     if num <= 0:
       raise commands.UserInputError("num must be a positive number.")
     if channel is None:
