@@ -446,7 +446,7 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
       fields=fields, timestamp=context.message.created_at
     )
     if unsuppressed == 0:
-      await send_temp_message(context, "Could not suppress message(s).", 10)
+      await send_temp_message(context, "Could not unsuppress message(s).", 10)
     await context.message.delete()
    
   @_media.group(
