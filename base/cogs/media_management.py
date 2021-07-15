@@ -4,6 +4,7 @@ import os
 import discord
 import asyncio
 import typing
+import json
 from urllib.parse import urlparse
 from discord.ext import commands, tasks
 from base.modules.access_checks import has_mod_role, check_channel_permissions
@@ -125,6 +126,9 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
   def get_suppress_mode(self, guild):
     return self.bot.get_setting(guild, "SUPPRESS_MODE")
     
+  def get_suppress_filter(self, guild):
+    return self.bot.get_setting(guild, "SUPPRESS_FILTER")
+    
   def get_suppress_delay(self, guild):
     return self.bot.get_setting(guild, "SUPPRESS_DELAY")
     
@@ -166,6 +170,8 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
       return True
       
   async def update_media_on_message(self, message):
+    if self.get_suppress_mode(message.guild) == "OFF":
+      return
     # ignore channels in white list
     if self.channel_in_white_list(message.channel):
       return
@@ -177,8 +183,8 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
     # insert the new media message
     media = self.filter_media(message)
     if media:
-      suppress = 1 if media == message.content else -1
-      self.bot.db[guild.id].insert_or_update("media", message.id, naive_time_to_seconds(message.created_at), member.id, channel.id, media, 1, suppress)
+      suppress = 1 if self.need_suppress(message) else -1
+      self.bot.db[guild.id].insert_or_update("media", message.id, naive_time_to_seconds(message.created_at), member.id, channel.id, json.dumps(media), 1, suppress)
     # suppress the messages that meet the criteria
     self.suppress_message(channel)
     # check the rate of media and send alert
@@ -257,22 +263,35 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
           
     
   def filter_media(self, message):
-    links = re.findall(r'(https?://\S+)', message.content)
-    media = None
-    for link in links:
-      if self.need_suppress(link):
-        media = link
-        break
-    else:
+    media = []
+    if not message.author.bot:
+      for embed in message.embeds:
+        if embed.url:
+          media.append(embed.url)
       for attachment in message.attachments:
         if attachment.height:
-          media = attachment.url
-          break
+          media.append(attachment.url)
     return media
   
           
-  def need_suppress(self, content):
-    url = urlparse(content)
+  def need_suppress(self, message):
+    sfilter = self.get_suppress_filter(message.guild)
+    if sfilter == "HEAVY":
+      if len(message.embeds) > 0  and len(message.attachments) == 0:
+        return True
+    elif sfilter == "MEDIUM":
+      if len(message.embeds) > 0  and len(message.attachments) == 0:
+        for embed in message.embeds:
+          if embed.url:
+            if self.is_suppress_link(embed.url):
+              return True
+    elif sfilter == "LIGHT":
+      if len(message.embeds) == 1 and len(message.attachments) == 0 and message.embeds[0].url == message.content:
+        return self.is_suppress_link(message.content)
+    return False
+    
+  def is_suppress_link(self, link):
+    url = urlparse(link)
     return bool(url.netloc) and ("tenor.com" in url.netloc or "giphy.com" in url.netloc or
                                  url.path.endswith(('.png', '.jpg', '.jpeg', '.tiff', '.tif', '.bmp', '.gif')))
                                  
@@ -394,7 +413,8 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
       if len(members) == 0 or message.author in members:
         msg_count += 1
         if msg_count > skip_num: # skip the first m messages
-          await message.edit(suppress=True)
+          if message.embeds:
+            await message.edit(suppress=True)
           suppressed += 1
     fields = {
       "Author(s)":"\n".join([f"{member.mention}\n{member}\nUID: {member.id}" for member in members]) if members else None,

@@ -755,78 +755,83 @@ class BaseBot(commands.Bot):
       await role.edit(name=value)
     return change_bot_name
     
+  def add_default_setting(self, defaultSetting):
+    self.default_settings[defaultSetting.name] = defaultSetting
+    
   def initialize_default_settings(self):
     bot_name = self.user.name
-    self.default_settings["PREFIX"] = DefaultSetting(name="PREFIX", default="?", description="command prefix")
-    self.default_settings["MAX_WARNINGS"] = DefaultSetting(name="MAX_WARNINGS", default=4, description="max allowed warnings", 
-      transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer")
-    self.default_settings["MAX_WARNINGS"] = DefaultSetting(name="MAX_WARNINGS", default=4, description="max allowed warnings", 
-      transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer")
-    self.default_settings["WARN_DURATION"] = DefaultSetting(name="WARN_DURATION", default=5, description="warning expiry (day)", 
-      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
-    self.default_settings["MUTE_DURATION"] = DefaultSetting(name="MUTE_DURATION", default=1, description="mute expiry (day)", 
-      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
-    self.default_settings["MOD_ROLE_NAME"] = DefaultSetting(name="MOD_ROLE_NAME", default=f"{bot_name}'s Enforcer", description="gives mod commands", 
-      adaptFun=self.change_bot_name_fun("MOD_ROLE_NAME"))
-    self.default_settings["ADMIN_ROLE_NAME"] = DefaultSetting(name="ADMIN_ROLE_NAME", default=f"{bot_name}'s Master", description="gives admin commands", 
-      adaptFun=self.change_bot_name_fun("ADMIN_ROLE_NAME"))
-    self.default_settings["BOT_ROLE_NAME"] = DefaultSetting(name="BOT_ROLE_NAME", default=f"{bot_name} Role", description="role the bot claims", 
-      adaptFun=self.change_bot_name_fun("BOT_ROLE_NAME"))
-    self.default_settings["CMD_ROLE_NAME"] = DefaultSetting(name="CMD_ROLE_NAME", default="Command Master", description="gives command editing access", 
-      adaptFun=self.change_bot_name_fun("CMD_ROLE_NAME"))
-    self.default_settings["MUTE_ROLE_NAME"] = DefaultSetting(name="MUTE_ROLE_NAME", default="Muted", description="revokes posting access", 
-      adaptFun=self.change_bot_name_fun("MUTE_ROLE_NAME"))
-    self.default_settings["BOT_CATEGORY_NAME"] = DefaultSetting(name="BOT_CATEGORY_NAME", default=f"{bot_name}s-bot-corner", description="category for logs", 
-      adaptFun=self.change_bot_name_fun("BOT_CATEGORY_NAME"))
-    self.default_settings["NUM_DELETE_CACHE"] = DefaultSetting(name="NUM_DELETE_CACHE", default=10, description="num of restorable deleted messages", 
-      transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer")
-    self.default_settings["MODMAIL_EXPIRY"] = DefaultSetting(name="MODMAIL_EXPIRY", default=15.0, description="modmail expiry (min)", 
-      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
+    self.add_default_setting(DefaultSetting(name="PREFIX", default="?", description="command prefix"))
+    self.add_default_setting(DefaultSetting(name="MAX_WARNINGS", default=4, description="max allowed warnings", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer"))
+    self.add_default_setting(DefaultSetting(name="MAX_WARNINGS", default=4, description="max allowed warnings", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer"))
+    self.add_default_setting(DefaultSetting(name="WARN_DURATION", default=5, description="warning expiry (day)", 
+      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number"))
+    self.add_default_setting(DefaultSetting(name="MUTE_DURATION", default=1, description="mute expiry (day)", 
+      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number"))
+    self.add_default_setting(DefaultSetting(name="MOD_ROLE_NAME", default=f"{bot_name}'s Enforcer", description="gives mod commands", 
+      adaptFun=self.change_bot_name_fun("MOD_ROLE_NAME")))
+    self.add_default_setting(DefaultSetting(name="ADMIN_ROLE_NAME", default=f"{bot_name}'s Master", description="gives admin commands", 
+      adaptFun=self.change_bot_name_fun("ADMIN_ROLE_NAME")))
+    self.add_default_setting(DefaultSetting(name="BOT_ROLE_NAME", default=f"{bot_name} Role", description="role the bot claims", 
+      adaptFun=self.change_bot_name_fun("BOT_ROLE_NAME")))
+    self.add_default_setting(DefaultSetting(name="CMD_ROLE_NAME", default="Command Master", description="gives command editing access", 
+      adaptFun=self.change_bot_name_fun("CMD_ROLE_NAME")))
+    self.add_default_setting(DefaultSetting(name="MUTE_ROLE_NAME", default="Muted", description="revokes posting access", 
+      adaptFun=self.change_bot_name_fun("MUTE_ROLE_NAME")))
+    self.add_default_setting(DefaultSetting(name="BOT_CATEGORY_NAME", default=f"{bot_name}s-bot-corner", description="category for logs", 
+      adaptFun=self.change_bot_name_fun("BOT_CATEGORY_NAME")))
+    self.add_default_setting(DefaultSetting(name="NUM_DELETE_CACHE", default=10, description="num of restorable deleted messages", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer"))
+    self.add_default_setting(DefaultSetting(name="MODMAIL_EXPIRY", default=15.0, description="modmail expiry (min)", 
+      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number"))
       
     async def auto_modmail_change(value, context):
       await self.get_cog("General Commands").change_auto_delete(value, context.guild)
       
-    self.default_settings["AUTO_MODMAIL"] = DefaultSetting(name="AUTO_MODMAIL", default="ON", description="on/off modmail auto deletion", 
+    self.add_default_setting(DefaultSetting(name="AUTO_MODMAIL", default="ON", description="on/off modmail auto deletion", 
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF", 
-      adaptFun=auto_modmail_change)
-    self.default_settings["AUTO_UPDATE"] = DefaultSetting(name="AUTO_UPDATE", default="ON", description="on/off slaps/stats auto update", 
+      adaptFun=auto_modmail_change))
+    self.add_default_setting(DefaultSetting(name="AUTO_UPDATE", default="ON", description="on/off slaps/stats auto update", 
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF",
-      adaptFun=lambda value, context: self.get_cog("User Management Commands").change_auto_update(value, context.guild))
-    self.default_settings["UPDATE_CYCLE"] = DefaultSetting(name="UPDATE_CYCLE", default=1.0, description="interval between updates (h)", 
+      adaptFun=lambda value, context: self.get_cog("User Management Commands").change_auto_update(value, context.guild)))
+    self.add_default_setting(DefaultSetting(name="UPDATE_CYCLE", default=1.0, description="interval between updates (h)", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number",
-      adaptFun=lambda value, context: self.get_cog("User Management Commands").change_update_cycle(value, context.guild))
-    self.default_settings["ERROR_LOG"] = DefaultSetting(name="ERROR_LOG", default="ON", description="on/off error logging", 
-      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
-    self.default_settings["ADMIN_LOG"] = DefaultSetting(name="ADMIN_LOG", default="ON", description="on/off admin logging",
-      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
-    self.default_settings["MOD_LOG"] = DefaultSetting(name="MOD_LOG", default="ON", description="on/off mod logging", 
-      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
-    self.default_settings["AUDIT_LOG"] = DefaultSetting(name="AUDIT_LOG", default="ON", description="on/off audit logging", 
-      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
-    self.default_settings["MESSAGE_LOG"] = DefaultSetting(name="MESSAGE_LOG", default="ON", description="on/off message logging", 
-      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF")
-    self.default_settings["ACTIVE_TIME"] = DefaultSetting(name="ACTIVE_TIME", default=2, description="interactive message active time", 
-      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number")
-    self.default_settings["SUPPRESS_MODE"] = DefaultSetting(name="SUPPRESS_MODE", default="OFF", description="mode to suppress embeds", 
-      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["OFF", "DELAY", "POSITION", "ANY", "BOTH"], checkDescription="OFF, DELAY, POSITION, ANY, or BOTH")
-    self.default_settings["SUPPRESS_DELAY"] = DefaultSetting(name="SUPPRESS_DELAY", default=10.0, description="delay to suppress embeds (min)", 
-      transFun=lambda x: float(x), checkFun=lambda x: x>=0, checkDescription="a non-negative number")
-    self.default_settings["SUPPRESS_POSITION"] = DefaultSetting(name="SUPPRESS_POSITION", default=10, description="position to suppress embeds", 
-      transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer")
-    self.default_settings["SUPPRESS_LIMIT"] = DefaultSetting(name="SUPPRESS_LIMIT", default=5, description="limit of link embeds kept", 
-      transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer")
-    self.default_settings["SUPPRESS_CHANNEL"] = DefaultSetting(name="SUPPRESS_CHANNEL", default="ALL_BUT_WHITE", description="which channel to suppress", 
-      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ALL_BUT_WHITE", "NONE_BUT_BLACK"], checkDescription="either ALL_BUT_WHITE or NONE_BUT_BLACK")
-    self.default_settings["MEDIA_CLEAN"] = DefaultSetting(name="MEDIA_CLEAN", default="ON", description="on/off media db cleaning", 
+      adaptFun=lambda value, context: self.get_cog("User Management Commands").change_update_cycle(value, context.guild)))
+    self.add_default_setting(DefaultSetting(name="ERROR_LOG", default="ON", description="on/off error logging", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF"))
+    self.add_default_setting(DefaultSetting(name="ADMIN_LOG", default="ON", description="on/off admin logging",
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF"))
+    self.add_default_setting(DefaultSetting(name="MOD_LOG", default="ON", description="on/off mod logging", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF"))
+    self.add_default_setting(DefaultSetting(name="AUDIT_LOG", default="ON", description="on/off audit logging", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF"))
+    self.add_default_setting(DefaultSetting(name="MESSAGE_LOG", default="ON", description="on/off message logging", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF"))
+    self.add_default_setting(DefaultSetting(name="ACTIVE_TIME", default=2, description="interactive message active time", 
+      transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number"))
+    self.add_default_setting(DefaultSetting(name="SUPPRESS_MODE", default="OFF", description="mode to suppress embeds", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["OFF", "DELAY", "POSITION", "ANY", "BOTH"], checkDescription="OFF, DELAY, POSITION, ANY, or BOTH"))
+    self.add_default_setting(DefaultSetting(name="SUPPRESS_FILTER", default="LIGHT", description="how heavy to suppress", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["LIGHT", "MEDIUM", "HEAVY"], checkDescription="LIGHT, MEDIUM or HEAVY"))
+    self.add_default_setting(DefaultSetting(name="SUPPRESS_DELAY", default=10.0, description="delay to suppress embeds (min)", 
+      transFun=lambda x: float(x), checkFun=lambda x: x>=0, checkDescription="a non-negative number"))
+    self.add_default_setting(DefaultSetting(name="SUPPRESS_POSITION", default=10, description="position to suppress embeds", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer"))
+    self.add_default_setting(DefaultSetting(name="SUPPRESS_LIMIT", default=5, description="limit of link embeds kept", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer"))
+    self.add_default_setting(DefaultSetting(name="SUPPRESS_CHANNEL", default="ALL_BUT_WHITE", description="which channel to suppress", 
+      transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ALL_BUT_WHITE", "NONE_BUT_BLACK"], checkDescription="either ALL_BUT_WHITE or NONE_BUT_BLACK"))
+    self.add_default_setting(DefaultSetting(name="MEDIA_CLEAN", default="ON", description="on/off media db cleaning", 
       transFun=lambda x: x.upper(), checkFun=lambda x: x in ["ON", "OFF"], checkDescription="either ON or OFF",
-      adaptFun=lambda value, context: self.get_cog("Media Management Commands").change_media_clean(value, context.guild))
-    self.default_settings["MEDIA_CYCLE"] = DefaultSetting(name="MEDIA_CYCLE", default=24.0, description="interval of media cleaning (h)", 
+      adaptFun=lambda value, context: self.get_cog("Media Management Commands").change_media_clean(value, context.guild)))
+    self.add_default_setting(DefaultSetting(name="MEDIA_CYCLE", default=24.0, description="interval of media cleaning (h)", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number",
-      adaptFun=lambda value, context: self.get_cog("Media Management Commands").change_media_cycle(value, context.guild))
-    self.default_settings["MEDIA_RATE_LIMIT"] = DefaultSetting(name="MEDIA_RATE_LIMIT", default=10, description="rate limit of media message (h)", 
-      transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer")
-    self.default_settings["MEDIA_ALERT_CD"] = DefaultSetting(name="MEDIA_ALERT_CD", default=10.0, description="cooldown of media alerts (min)", 
-      transFun=lambda x: float(x), checkDescription="a number")
+      adaptFun=lambda value, context: self.get_cog("Media Management Commands").change_media_cycle(value, context.guild)))
+    self.add_default_setting(DefaultSetting(name="MEDIA_RATE_LIMIT", default=10, description="rate limit of media message (h)", 
+      transFun=lambda x: int(x), checkFun=lambda x: x>0, checkDescription="a positive integer"))
+    self.add_default_setting(DefaultSetting(name="MEDIA_ALERT_CD", default=10.0, description="cooldown of media alerts (min)", 
+      transFun=lambda x: float(x), checkDescription="a number"))
   
   def add_default_settings(self, guild):
     #Add default settings for allowed settings
