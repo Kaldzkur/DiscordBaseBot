@@ -181,14 +181,15 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
     # update position of messages before
     self.bot.db[guild.id].query(f"UPDATE media SET pos=pos+1 WHERE cid={channel.id}")
     # insert the new media message
-    media = self.filter_media(message)
-    if media:
-      suppress = 1 if self.need_suppress(message) else -1
+    media, need_suppress = self.filter_media(message)
+    check = media or need_suppress
+    if check:
+      suppress = 1 if need_suppress else -1
       self.bot.db[guild.id].insert_or_update("media", message.id, naive_time_to_seconds(message.created_at), member.id, channel.id, json.dumps(media), 1, suppress)
     # suppress the messages that meet the criteria
     self.suppress_message(channel)
     # check the rate of media and send alert
-    if media:
+    if check:
       await self.media_alert(message)
           
   def suppress_message(self, channel):
@@ -263,32 +264,37 @@ class MediaManagementCog(commands.Cog, name="Media Management Commands"):
           
     
   def filter_media(self, message):
-    media = []
-    if not message.author.bot:
-      for embed in message.embeds:
-        if embed.url:
-          media.append(embed.url)
-      for attachment in message.attachments:
-        if attachment.height:
-          media.append(attachment.url)
-    return media
-  
-          
-  def need_suppress(self, message):
+    embed_urls = []
+    attachment_url = []
+    if message.author.bot:
+      return [], False
+    for embed in message.embeds:
+      if embed.url and self.is_suppress_link(embed.url):
+        embed_urls.append(embed.url)
+    for attachment in message.attachments:
+      if attachment.height:
+        attachment_url.append(attachment.url)
+    regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+    urls = re.findall(regex, message.content)
+    for url in urls:
+      url = url[0]
+      if url not in embed_urls and self.is_suppress_link(url):
+        embed_urls.append(url)
+    # check whether the message need suppress
+    need_suppress = False
     sfilter = self.get_suppress_filter(message.guild)
-    if sfilter == "HEAVY":
-      if len(message.embeds) > 0  and len(message.attachments) == 0:
-        return True
-    elif sfilter == "MEDIUM":
-      if len(message.embeds) > 0  and len(message.attachments) == 0:
-        for embed in message.embeds:
-          if embed.url:
-            if self.is_suppress_link(embed.url):
-              return True
-    elif sfilter == "LIGHT":
-      if len(message.embeds) == 1 and len(message.attachments) == 0 and message.embeds[0].url == message.content:
-        return self.is_suppress_link(message.content)
-    return False
+    if sfilter == "HEAVY": # will suppress all with embeds
+      if embed_urls or message.embeds:
+        need_suppress = True
+    elif sfilter == "MEDIUM": # will suppress all with any embed meeting the criterial
+      if embed_urls:
+        need_suppress = True
+    elif sfilter == "LIGHT": # will suppress one-link message
+      if len(embed_urls) == 1 and embed_urls[0] == message.content:
+        need_suppress = True
+    media = embed_urls + attachment_url
+    return media, need_suppress
+  
     
   def is_suppress_link(self, link):
     url = urlparse(link)
