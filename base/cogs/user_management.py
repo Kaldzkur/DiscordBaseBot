@@ -360,7 +360,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
   @commands.group(
     name="info",
     brief="Shows user info",
-    aliases=[],
+    invoke_without_command=True,
   )
   @has_mod_role()
   async def _info(self, context, members: commands.Greedy[MemberOrUser]):
