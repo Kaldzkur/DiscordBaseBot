@@ -357,13 +357,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       embed.set_footer(text="USER STATISTICS")
       await context.send(content=None, embed=embed)
 
-  @commands.group(
+  @commands.command(
     name="info",
     brief="Shows user info",
-    invoke_without_command=True,
   )
   @has_mod_role()
-  async def _info(self, context, members: commands.Greedy[MemberOrUser]):
+  async def _user_info(self, context, members: commands.Greedy[MemberOrUser]):
     if len(members) == 0:
       await context.send(f"Sorry {context.author.mention}, but no valid user(s) were found.")
       return
@@ -388,10 +387,9 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       description=f"**Target User(s):**\n{users}", timestamp=context.message.created_at
     )
 
-  @_info.command(
+  @commands.command(
     name="server",
     brief="Shows server info",
-    aliases=[],
   )
   @has_mod_role()
   async def _server_info(self, context):
