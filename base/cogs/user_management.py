@@ -388,26 +388,6 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     )
 
   @commands.command(
-    name="server",
-    brief="Shows server info",
-  )
-  @has_mod_role()
-  async def _server_info(self, context):
-    guild = context.guild
-    embed = discord.Embed(title=f"Server Information", colour=context.author.colour)
-    embed.add_field(name="Server:", value=f"{guild.name}", inline=False)
-    embed.add_field(name="ID:", value=f"{guild.id}", inline=False)
-    embed.add_field(name="Owner:", value=f"{guild.owner.name}\n{guild.owner}", inline=False)
-    embed.add_field(name="Members:", value=f"{guild.member_count}", inline=False)
-    embed.add_field(name="Created on:", value=f"{guild.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC", inline=False)
-    embed.set_thumbnail(url=guild.icon_url)
-    await context.send(content=None, embed=embed)
-    await self.bot.log_message(context.guild, "MOD_LOG",
-      user=context.author, action="fetched server information",
-      timestamp=context.message.created_at
-    )
-
-  @commands.command(
     name="mute",
     brief="Mutes one or more users",
     description="Will apply the `Muted` role to one or more members.",

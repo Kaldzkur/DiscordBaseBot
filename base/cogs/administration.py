@@ -242,6 +242,21 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     await context.send(f"Bot Owner(s):\n{owner_string}")
 
   @commands.command(
+    name="server",
+    brief="Shows server info",
+  )
+  async def _server_info(self, context):
+    guild = context.guild
+    embed = discord.Embed(title=f"Server Information", colour=context.author.colour)
+    embed.add_field(name="Server:", value=f"{guild.name}", inline=False)
+    embed.add_field(name="ID:", value=f"{guild.id}", inline=False)
+    embed.add_field(name="Owner:", value=f"{guild.owner.name}\n{guild.owner}", inline=False)
+    embed.add_field(name="Members:", value=f"{guild.member_count}", inline=False)
+    embed.add_field(name="Created on:", value=f"{guild.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC", inline=False)
+    embed.set_thumbnail(url=guild.icon_url)
+    await context.send(content=None, embed=embed)
+
+  @commands.command(
     name="invite",
     brief="Link to invite bot",
   )
