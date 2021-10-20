@@ -50,6 +50,19 @@ class InteractiveMessage(ABC):
     self.context = parent.context # the context that starts the message
     self.message = parent.message # the discord message bonded to this object
     
+  def set_attributes(self, *attributes):
+    # set the attributes of the object, including the attributes of its parent
+    timeout = attributes.pop("timeout", None)
+    context = attributes.pop("context", None)
+    message = attributes.pop("message", None)
+    msg = self
+    while msg is not None:
+      msg.timeout = timeout
+      msg.context = context
+      msg.message = message
+      msg = msg.parent
+    
+    
   async def prepare(self):
     # things to setup before sending the message
     pass
@@ -188,9 +201,7 @@ class InteractiveSelectionMessage(InteractiveMessage):
       if child.parent is None:
         child.set_parent(self)
       else:
-        child.context = self.context
-        child.timeout = self.timeout
-        child.message = self.message
+        child.set_attributes(context=self.context, timeout=self.timeout, message=self.message)
       return child
       
   async def get_embed(self):
