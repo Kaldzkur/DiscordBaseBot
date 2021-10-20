@@ -104,11 +104,11 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
       message_log = self.bot.get_log(message.guild, "message-log")
       if message.content or message.embeds or files:
         if message.embeds:
-          await message_log.send(content=message.content, embed=message.embeds[0], files=files)
+          await message_log.send(content=message.clean_content, embed=message.embeds[0], files=files)
           for embed in message.embeds[1:]:
             await message_log.send(content=None, embed=embed)
         else:
-          await message_log.send(content=message.content, files=files)
+          await message_log.send(content=message.clean_content, files=files)
 
   @commands.Cog.listener()
   async def on_raw_message_delete(self, payload):
