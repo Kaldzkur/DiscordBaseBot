@@ -185,7 +185,8 @@ class InteractiveSelectionMessage(InteractiveMessage):
       if selection >= self.num:
         return None
       child = self.trans(selection)
-      child.set_parent(self)
+      if child.parent is None:
+        child.set_parent(self)
       return child
       
   async def get_embed(self):
