@@ -187,6 +187,10 @@ class InteractiveSelectionMessage(InteractiveMessage):
       child = self.trans(selection)
       if child.parent is None:
         child.set_parent(self)
+      else:
+        child.context = self.context
+        child.timeout = self.timeout
+        child.message = self.message
       return child
       
   async def get_embed(self):
