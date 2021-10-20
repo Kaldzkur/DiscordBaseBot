@@ -50,7 +50,7 @@ class InteractiveMessage(ABC):
     self.context = parent.context # the context that starts the message
     self.message = parent.message # the discord message bonded to this object
     
-  def set_attributes(self, *attributes):
+  def set_attributes(self, **attributes):
     # set the attributes of the object, including the attributes of its parent
     timeout = attributes.pop("timeout", None)
     context = attributes.pop("context", None)
