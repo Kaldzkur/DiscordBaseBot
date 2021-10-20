@@ -178,6 +178,7 @@ class InteractiveSelectionMessage(InteractiveMessage):
     self.page_length = attributes.pop("page_length", 10)
     self.title = attributes.pop("title", "Please Make a Selection")
     self.description = attributes.pop("description", "")
+    self.description = attributes.pop("colour", None)
     self.page = 1
     self.total_page = self.num//self.page_length + 1
     if self.total_page > 1:
@@ -209,7 +210,7 @@ class InteractiveSelectionMessage(InteractiveMessage):
     page_selections = [f"{num_emojis[ind+1]} {page_selections[ind]}" for ind in range(0,len(page_selections))]
     selection_content = "\n".join(page_selections)
     description = f"{self.description}\n{selection_content}"
-    embed = discord.Embed(title=self.title, timestamp=datetime.utcnow(), description=description)
+    embed = discord.Embed(title=self.title, timestamp=datetime.utcnow(), description=description, colour=self.colour)
     embed.set_footer(text=f"Page {self.page}/{self.total_page}")
     return embed
       
