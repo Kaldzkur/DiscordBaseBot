@@ -178,7 +178,7 @@ class InteractiveSelectionMessage(InteractiveMessage):
     self.page_length = attributes.pop("page_length", 10)
     self.title = attributes.pop("title", "Please Make a Selection")
     self.description = attributes.pop("description", "")
-    self.colour = attributes.pop("colour", None)
+    self.colour = attributes.pop("colour", discord.Embed.Empty)
     self.page = 1
     self.total_page = self.num//self.page_length + 1
     if self.total_page > 1:
