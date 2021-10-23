@@ -386,6 +386,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       user=context.author, action="fetched user information",
       description=f"**Target User(s):**\n{users}", timestamp=context.message.created_at
     )
+	
 
   @commands.command(
     name="mute",
@@ -411,6 +412,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         continue
       elif member.id in self.bot.owner_ids:
         await context.send(f"Sorry {context.author.mention}, but my owner made himself immune against muting!")
+        continue
+      elif member.top_role > context.auhor.top_role:
+        await context.send(f"Sorry {context.author.mention}, but you do not have enough power to mute {member}!")
+        continue
+      elif member.top_role > context.guild.me.top_role:
+        await context.send(f"Sorry {context.author.mention}, but I do not have enough power to mute {member}!")
         continue
       self.bot.db[context.guild.id].insert_or_update("users_muted", member.id, expiry)
       await member.add_roles(mute_role)
@@ -459,6 +466,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         continue
       elif member.id in self.bot.owner_ids:
         await context.send(f"Sorry {context.author.mention}, but my owner made himself immune against muting!")
+        continue
+      elif member.top_role > context.auhor.top_role:
+        await context.send(f"Sorry {context.author.mention}, but you do not have enough power to unmute {member}!")
+        continue
+      elif member.top_role > context.guild.me.top_role:
+        await context.send(f"Sorry {context.author.mention}, but I do not have enough power to unmute {member}!")
         continue
       self.bot.db[context.guild.id].delete_row("users_muted", member.id)
       await member.remove_roles(mute_role)
@@ -525,6 +538,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         continue
       elif member.id in self.bot.owner_ids:
         await context.send(f"Sorry {context.author.mention}, but my owner made himself immune against warnings! What a jerk!")
+        continue
+      elif member.top_role > context.auhor.top_role:
+        await context.send(f"Sorry {context.author.mention}, but you do not have enough power to warn {member}!")
+        continue
+      elif member.top_role > context.guild.me.top_role:
+        await context.send(f"Sorry {context.author.mention}, but I do not have enough power to warn {member}!")
         continue
       warn_count = self.bot.db[context.guild.id].select("user_warnings", member.id)
       if warn_count is None:
@@ -629,6 +648,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       elif member.id in self.bot.owner_ids:
         await context.send(f"Sorry {context.author.mention}, but my owner is immune to warnings.")
         continue
+      elif member.top_role > context.auhor.top_role:
+        await context.send(f"Sorry {context.author.mention}, but you do not have enough power to remove warnings from {member}!")
+        continue
+      elif member.top_role > context.guild.me.top_role:
+        await context.send(f"Sorry {context.author.mention}, but I do not have enough power to remove warnings from {member}!")
+        continue
       warn_count = self.bot.db[context.guild.id].select("user_warnings", member.id)
       if warn_count is None:
         warn_count = 0
@@ -687,6 +712,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       elif member.id in self.bot.owner_ids:
         await context.send(f"Sorry {context.author.mention}, but I can't betray my owner!")
         continue
+      elif member.top_role > context.auhor.top_role:
+        await context.send(f"Sorry {context.author.mention}, but you do not have enough power to kick {member}!")
+        continue
+      elif member.top_role > context.guild.me.top_role:
+        await context.send(f"Sorry {context.author.mention}, but I do not have enough power to kick {member}!")
+        continue
       await member.kick(reason=reason)
       await context.send(f"```{member} has been kicked from the server.```")
       await self.bot.log_message(context.guild, "MOD_LOG",
@@ -720,6 +751,12 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         continue
       elif user.id in self.bot.owner_ids:
         await context.send(f"Sorry {context.author.mention}, but I can't betray my owner!")
+        continue
+      elif member.top_role > context.auhor.top_role:
+        await context.send(f"Sorry {context.author.mention}, but you do not have enough power to ban {member}!")
+        continue
+      elif member.top_role > context.guild.me.top_role:
+        await context.send(f"Sorry {context.author.mention}, but I do not have enough power to ban {member}!")
         continue
       await context.guild.ban(user, reason=reason, delete_message_days=days)
       await context.send(f"```{user} has been banned from the server.```")

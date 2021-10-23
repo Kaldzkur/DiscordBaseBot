@@ -133,6 +133,15 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
   @has_mod_role()
   async def _rlink(self, context):
     await context.send_help("rlink")
+	
+  def permission_power_check(self, context, mode_role, role):
+    if context.author.top_role <= role:
+      return f"Sorry {context.author.mention}, you do not have enough permission to manage {role.mention}"
+    if context.guild.me.top_role <= role:
+      return f"Sorry {context.author.mention}, I do not have enough permission to manage {role.mention}"
+    if mode_role and mod_role <= role:
+      return f"Sorry {context.author.mention}, {mod_role.mention} do not have enough permission to manage {role.mention}"
+    return None
 
   @_rlink.command(
     name="mod",
@@ -145,15 +154,11 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
   @has_mod_role()
   async def _rlink_mod(self, context, channel: discord.TextChannel, mod_role: discord.Role, emoji: EmojiUnion, role: discord.Role):
     # check the permissions
-    if context.author.top_role <= role:
-      await context.send(f"Sorry {context.author.mention}, you do not have enough permission to manage {role.mention}")
+    check_result = self.permission_power_check(context, mode_role, role)
+    if check_result:
+      await context.send(check_result)
       return
-    if context.guild.me.top_role <= role:
-      await context.send(f"Sorry {context.author.mention}, I do not have enough permission to manage {role.mention}")
-      return
-    if mod_role <= role:
-      await context.send(f"Sorry {context.author.mention}, {mod_role.mention} do not have enough permission to manage {role.mention}")
-      return
+	  
     self.role_links[context.guild.id].append({
       "role": role.id,
       "channel": channel.id,
@@ -183,12 +188,11 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
   @has_mod_role()
   async def _rlink_self(self, context, message: discord.Message, emoji: EmojiUnion, role: discord.Role):
     # check the permissions
-    if context.author.top_role <= role:
-      await context.send(f"Sorry {context.author.mention}, you do not have enough permission to manage {role.mention}")
+    check_result = self.permission_power_check(context, None, role)
+    if check_result:
+      await context.send(check_result)
       return
-    if context.guild.me.top_role <= role:
-      await context.send(f"Sorry {context.author.mention}, I do not have enough permission to manage {role.mention}")
-      return
+	  
     self.role_links[context.guild.id].append({
       "role": role.id,
       "channel": message.channel.id,
@@ -217,12 +221,11 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
   @has_mod_role()
   async def _rlink_rm(self, context, role: discord.Role):
     # check the permissions
-    if context.author.top_role <= role:
-      await context.send(f"Sorry {context.author.mention}, you do not have enough permission to manage {role.mention}")
+    check_result = self.permission_power_check(context, None, role)
+    if check_result:
+      await context.send(check_result)
       return
-    if context.guild.me.top_role <= role:
-      await context.send(f"Sorry {context.author.mention}, I do not have enough permission to manage {role.mention}")
-      return
+	  
     # remove all links to the role
     self.role_links[context.guild.id] = [role_link for role_link in self.role_links[context.guild.id] if role_link["role"] != role.id]
     await context.send(f"Role-reaction link removed.")

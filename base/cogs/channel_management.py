@@ -9,6 +9,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+close_permissions = discord.PermissionOverwrite(view_channel = False)
+open_permissions = discord.PermissionOverwrite(
+  create_instant_invite=True, manage_channels=False, manage_roles=False, manage_webhooks=False, read_messages=True,
+  send_messages=True, send_tts_messages=True, manage_messages=False, embed_links=True, 
+  attach_files=True, read_message_history=True, mention_everyone=True, use_external_emojis=True, add_reactions=True)
+mute_permissions = discord.PermissionOverwrite(
+  view_channel=True, send_messages=False, send_tts_messages=False, manage_messages=False, embed_links=False, 
+  attach_files=False, read_message_history=True, mention_everyone=False, use_external_emojis=True, add_reactions=True)
+mod_permissions = discord.PermissionOverwrite(
+  create_instant_invite=True, manage_channels=True, manage_roles=True, manage_webhooks=True, read_messages=True,
+  send_messages=True, send_tts_messages=True, manage_messages=True, embed_links=True, 
+  attach_files=True, read_message_history=True, mention_everyone=True, use_external_emojis=True, add_reactions=True)
+
 class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   def __init__(self, bot):
     self.bot = bot
@@ -60,6 +73,20 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   @has_mod_role()
   async def _channel(self, context):
     await context.send_help("channel")
+	
+  def permission_power_check(self, context, members, roles):
+    for member in members:
+      if context.author.top_role <= member.top_role:
+        return f"Sorry {context.author.mention}, you do not have enough permission to manage {member}'s permissions"
+      if context.guild.me.top_role <= member.top_role:
+        return f"Sorry {context.author.mention}, I do not have enough permission to manage {member}'s permissions"
+    for role in roles:
+      if context.author.top_role <= role:
+        return f"Sorry {context.author.mention}, you do not have enough permission to manage {role.mention}"
+      if context.guild.me.top_role <= role:
+        return f"Sorry {context.author.mention}, I do not have enough permission to manage {role.mention}"
+    return None
+    
 
   @_channel.command(
     name="close",
@@ -69,24 +96,25 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   @commands.bot_has_permissions(manage_channels=True)
   @has_mod_role()
   async def _channel_close(self, context, members: commands.Greedy[discord.Member] = [], roles: commands.Greedy[discord.Role] = []):
-    overwrites = discord.PermissionOverwrite(view_channel = False)
+    check_result = self.permission_power_check(context, members, roles)
+    if check_result:
+      await context.send(check_result)
+      return
     permissions = context.message.channel.overwrites
     #bot still needs access to the channel
-    permissions[context.guild.me] = discord.PermissionOverwrite(
-      create_instant_invite=True, manage_channels=True, manage_roles=True, manage_webhooks=True, read_messages=True,
-      send_messages=True, send_tts_messages=True, manage_messages=True, embed_links=True, 
-      attach_files=True, read_message_history=True, mention_everyone=True, use_external_emojis=True, add_reactions=True
-    )
+    permissions[context.guild.me] = mod_permissions
     targets = []
     if len(members) == len(roles) == 0:
-      permissions[context.guild.default_role] = overwrites
+      permissions[context.guild.default_role] = close_permissions
     else:
       for member in members:
-        permissions[member] = overwrites
+        permissions[member] = close_permissions
         targets.append(f"{member.mention}\n{member}")
       for role in roles:
-        permissions[role] = overwrites
+        permissions[role] = close_permissions
         targets.append(f"{role.mention}")
+    #make sure the user (and the equivalent role) also has the permission
+	permissions[context.author.top_role] = mod_permissions
     await context.message.channel.edit(overwrites=permissions)
     fields = {
       "Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}",
@@ -106,36 +134,28 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   @commands.bot_has_permissions(manage_channels=True)
   @has_mod_role()
   async def _channel_open(self, context, members: commands.Greedy[discord.Member] = [], roles: commands.Greedy[discord.Role] = []):
-    overwrites = discord.PermissionOverwrite(
-      create_instant_invite=True, manage_channels=False, manage_roles=False, manage_webhooks=False, read_messages=True,
-      send_messages=True, send_tts_messages=True, manage_messages=False, embed_links=True, 
-      attach_files=True, read_message_history=True, mention_everyone=True, use_external_emojis=True, add_reactions=True
-    )
+    check_result = self.permission_power_check(context, members, roles)
+    if check_result:
+      await context.send(check_result)
+      return
     permissions = context.message.channel.overwrites
     targets = []
     if context.guild.me in permissions:
       permissions.pop(context.guild.me, None)
-    else:
-      permissions[context.guild.me] = overwrites
+	elif context.guild.me.top_role in permissions:
+	  permissions.pop(context.guild.me.top_role, None)
     if len(members) == len(roles) == 0:
-      if context.guild.default_role in permissions:
-        permissions.pop(context.guild.default_role, None)
-      else:
-        permissions[context.guild.default_role] = overwrites
+      permissions[context.guild.default_role] = open_permissions
     else:
       for member in members:
         if member in permissions:
-          if permissions[member] != overwrites:
+          if permissions[member] != open_permissions:
             permissions.pop(member, None)
-        else:
-          permissions[member] = overwrites
         targets.append(f"{member.mention}\n{member}")
       for role in roles:
         if role in permissions:
-          if permissions[role] != overwrites:
+          if permissions[role] != open_permissions:
             permissions.pop(role, None)
-        else:
-          permissions[role] = overwrites
         targets.append(f"{role.mention}")
     await context.message.channel.edit(overwrites=permissions)
     fields = {
@@ -155,27 +175,25 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
   @commands.bot_has_permissions(manage_channels=True)
   @has_mod_role()
   async def _channel_mute(self, context, members: commands.Greedy[discord.Member] = [], roles: commands.Greedy[discord.Role] = []):
-    overwrites = discord.PermissionOverwrite(
-      view_channel=True, send_messages=False, send_tts_messages=False, manage_messages=False, embed_links=False, 
-      attach_files=False, read_message_history=True, mention_everyone=False, use_external_emojis=True, add_reactions=True
-    )
+    check_result = self.permission_power_check(context, members, roles)
+    if check_result:
+      await context.send(check_result)
+      return
     permissions = context.message.channel.overwrites
     #bot still needs access to the channel
-    permissions[context.guild.me] = discord.PermissionOverwrite(
-      create_instant_invite=True, manage_channels=True, manage_roles=True, manage_webhooks=True, read_messages=True,
-      send_messages=True, send_tts_messages=True, manage_messages=True, embed_links=True, 
-      attach_files=True, read_message_history=True, mention_everyone=True, use_external_emojis=True, add_reactions=True
-    )
+    permissions[context.guild.me] = mod_permissions
     targets = []
     if len(members) == len(roles) == 0:
-      permissions[context.guild.default_role] = overwrites
+      permissions[context.guild.default_role] = mute_permissions
     else:
       for member in members:
-        permissions[member] = overwrites
+        permissions[member] = mute_permissions
         targets.append(f"{member.mention}\n{member}")
       for role in roles:
-        permissions[role] = overwrites
+        permissions[role] = mute_permissions
         targets.append(f"{role.mention}")
+    #make sure the user (and the equivalent role) also has the permission
+	permissions[context.author.top_role] = mod_permissions
     await context.message.channel.edit(overwrites=permissions)
     fields = {
       "Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}",
