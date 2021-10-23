@@ -114,7 +114,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
         permissions[role] = close_permissions
         targets.append(f"{role.mention}")
     #make sure the user (and the equivalent role) also has the permission
-	permissions[context.author.top_role] = mod_permissions
+    permissions[context.author.top_role] = mod_permissions
     await context.message.channel.edit(overwrites=permissions)
     fields = {
       "Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}",
@@ -142,8 +142,8 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
     targets = []
     if context.guild.me in permissions:
       permissions.pop(context.guild.me, None)
-	elif context.guild.me.top_role in permissions:
-	  permissions.pop(context.guild.me.top_role, None)
+    elif context.guild.me.top_role in permissions:
+      permissions.pop(context.guild.me.top_role, None)
     if len(members) == len(roles) == 0:
       permissions[context.guild.default_role] = open_permissions
     else:
@@ -193,7 +193,7 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
         permissions[role] = mute_permissions
         targets.append(f"{role.mention}")
     #make sure the user (and the equivalent role) also has the permission
-	permissions[context.author.top_role] = mod_permissions
+    permissions[context.author.top_role] = mod_permissions
     await context.message.channel.edit(overwrites=permissions)
     fields = {
       "Channel":f"{context.message.channel.mention}\nCID: {context.message.channel.id}",
