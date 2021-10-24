@@ -165,7 +165,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     
   def get_log_file(self):
     files = sorted(os.listdir(path))
-    return files[-1]
+    return os.path.join(path, files[-1])
 
   @commands.group(
     name="log",
