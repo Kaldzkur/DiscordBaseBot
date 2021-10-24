@@ -11,14 +11,13 @@ logger = logging.getLogger(__name__)
 
 close_permissions = discord.PermissionOverwrite(view_channel = False)
 open_permissions = discord.PermissionOverwrite(
-  create_instant_invite=True, manage_channels=False, manage_roles=False, manage_webhooks=False, read_messages=True,
-  send_messages=True, send_tts_messages=True, manage_messages=False, embed_links=True, 
-  attach_files=True, read_message_history=True, mention_everyone=True, use_external_emojis=True, add_reactions=True)
+  read_messages=True, send_messages=True, send_tts_messages=True, embed_links=True, 
+  attach_files=True, read_message_history=True, use_external_emojis=True, add_reactions=True)
 mute_permissions = discord.PermissionOverwrite(
   view_channel=True, send_messages=False, send_tts_messages=False, manage_messages=False, embed_links=False, 
-  attach_files=False, read_message_history=True, mention_everyone=False, use_external_emojis=True, add_reactions=True)
+  attach_files=False, read_message_history=True, use_external_emojis=True, add_reactions=True)
 mod_permissions = discord.PermissionOverwrite(
-  create_instant_invite=True, manage_channels=True, manage_roles=True, manage_webhooks=True, read_messages=True,
+  manage_channels=True, manage_roles=True, manage_webhooks=True, read_messages=True,
   send_messages=True, send_tts_messages=True, manage_messages=True, embed_links=True, 
   attach_files=True, read_message_history=True, mention_everyone=True, use_external_emojis=True, add_reactions=True)
 
@@ -142,20 +141,18 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
     targets = []
     if context.guild.me in permissions:
       permissions.pop(context.guild.me, None)
-    elif context.guild.me.top_role in permissions:
-      permissions.pop(context.guild.me.top_role, None)
+    if context.author.top_role in permissions:
+      permissions.pop(context.author.top_role, None)
     if len(members) == len(roles) == 0:
       permissions[context.guild.default_role] = open_permissions
     else:
       for member in members:
         if member in permissions:
-          if permissions[member] != open_permissions:
-            permissions.pop(member, None)
+          permissions.pop(member, None)
         targets.append(f"{member.mention}\n{member}")
       for role in roles:
         if role in permissions:
-          if permissions[role] != open_permissions:
-            permissions.pop(role, None)
+          permissions.pop(role, None)
         targets.append(f"{role.mention}")
     await context.message.channel.edit(overwrites=permissions)
     fields = {
