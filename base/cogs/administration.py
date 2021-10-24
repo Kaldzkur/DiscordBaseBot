@@ -162,6 +162,10 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     )
     await self.bot.close()
     os.system("sh shutdown.sh")
+    
+  def get_log_file(self):
+    files = sorted(os.listdir(path))
+    return files[-1]
 
   @commands.group(
     name="log",
@@ -170,9 +174,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   )
   @commands.is_owner()
   async def _log(self, context, num_lines:typing.Optional[int]=10, start_line:typing.Optional[int]=0):
-    files = sorted(os.listdir(path))
-    log_file = os.path.join(path, files[-1])
-    with open(log_file, mode="r") as f:
+    with open(self.get_log_file(), mode="r") as f:
       content = []
       for i, line in enumerate(reversed(f.readlines())):
         if start_line <= i < start_line + num_lines:
@@ -193,7 +195,7 @@ class AdminCog(commands.Cog, name="Administration Commands"):
   )
   @commands.is_owner()
   async def _log_file(self, context, start_line:typing.Optional[int]=0, num_lines:typing.Optional[int]=10):
-    log_file = os.path.join(path, os.listdir(path)[-1])
+    log_file = self.get_log_file()
     await context.send(file=discord.File(log_file))
     await self.bot.log_message(context.guild, "ADMIN_LOG",
       user=context.author, action="requested the log file",
