@@ -91,8 +91,8 @@ class BaseBot(commands.Bot):
     if "timestamp" not in content:
       content["timestamp"] = datetime.utcnow()
     embed = discord.Embed(
-      title=content["title"] if content["title"] else discord.Embed.empty,
-      description=content["description"] if content["description"] else discord.Embed.empty,
+      title=content["title"] if content["title"] else discord.Embed.Empty,
+      description=content["description"] if content["description"] else discord.Embed.Empty,
       colour=content["colour"],
       timestamp=content["timestamp"]
     )
