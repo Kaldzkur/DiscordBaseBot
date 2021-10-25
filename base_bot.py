@@ -544,9 +544,9 @@ class BaseBot(commands.Bot):
         mentionable=False
       )
       mute_channel_permissions = discord.PermissionOverwrite(
-        create_instant_invite=False, manage_channels=False, manage_roles=False, manage_webhooks=False, view_channel=True,
+        create_instant_invite=False, manage_channels=False, manage_roles=False, manage_webhooks=False,
         send_messages=False, send_tts_messages=False, manage_messages=False, embed_links=False, 
-        attach_files=False, read_message_history=True, mention_everyone=False, use_external_emojis=False, add_reactions=False,
+        attach_files=False, mention_everyone=False, use_external_emojis=False, add_reactions=False,
         priority_speaker=False, stream=False, connect=False, speak=False, mute_members=False, deafen_members=False,
         move_members=False, use_voice_activation=False
       )
