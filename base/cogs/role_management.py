@@ -134,12 +134,12 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
   async def _rlink(self, context):
     await context.send_help("rlink")
 	
-  def permission_power_check(self, context, mode_role, role):
+  def permission_power_check(self, context, mod_role, role):
     if context.author.top_role <= role:
       return f"Sorry {context.author.mention}, you do not have enough permission to manage {role.mention}"
     if context.guild.me.top_role <= role:
       return f"Sorry {context.author.mention}, I do not have enough permission to manage {role.mention}"
-    if mode_role and mod_role <= role:
+    if mod_role and mod_role <= role:
       return f"Sorry {context.author.mention}, {mod_role.mention} do not have enough permission to manage {role.mention}"
     return None
 
@@ -154,7 +154,7 @@ class RoleManagementCog(commands.Cog, name="Role Management Commands"):
   @has_mod_role()
   async def _rlink_mod(self, context, channel: discord.TextChannel, mod_role: discord.Role, emoji: EmojiUnion, role: discord.Role):
     # check the permissions
-    check_result = self.permission_power_check(context, mode_role, role)
+    check_result = self.permission_power_check(context, mod_role, role)
     if check_result:
       await context.send(check_result)
       return
