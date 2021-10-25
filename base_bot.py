@@ -564,10 +564,11 @@ class BaseBot(commands.Bot):
         if everyone_permissions.view_channel is False or everyone_permissions.send_messages is False:
           #Skip private channels, we do not want Muted people to suddenly have access to the channel
           continue
-      try:
-        await channel.set_permissions(mute_role, overwrite=mute_permissions)
-      except:
-        pass
+      if channel.overwrites_for(mute_role) != mute_permissions:
+        try:
+          await channel.set_permissions(mute_role, overwrite=mute_permissions)
+        except:
+          pass
 
   async def on_guild_channel_create(self, channel):
     await self.set_mute_channel_permission(channel.guild, [channel])
