@@ -561,7 +561,7 @@ class BaseBot(commands.Bot):
     for channel in candidate_channels:
       if public: # skip the public channels
         everyone_permissions = channel.overwrites_for(guild.default_role)
-        if everyone_permissions is None or everyone_permissions.pair()[1].view_channel is True:   #Deny-Pair
+        if everyone_permissions.view_channel is False or everyone_permissions.send_messages is False:
           #Skip private channels, we do not want Muted people to suddenly have access to the channel
           continue
       try:

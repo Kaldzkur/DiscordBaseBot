@@ -448,7 +448,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     description="Will set permissions for mute role in specific channels.",
     help="Note for moderators: if the optional `channels` parameter is unspecified, this will set permissions for all public channels.",
   )
-  async def _mute_set(self, context, channels: commands.Greedy[discord.Member]):
+  async def _mute_set(self, context, channels: commands.Greedy[discord.TextChannel]):
     public = True if not channels else False
     await self.bot.set_mute_channel_permission(context.guild, channels, public)
     await context.send("Channel permissions for mute role changed")
