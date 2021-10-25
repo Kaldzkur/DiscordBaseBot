@@ -388,12 +388,13 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
     )
 	
 
-  @commands.command(
+  @commands.group(
     name="mute",
     brief="Mutes one or more users",
     description="Will apply the `Muted` role to one or more members.",
     help="Note: For this command to work all text channels should have appropriate permissions for the `Muted` role. Unfortunately they have to be assigned to each channel manually. The optional `reason` parameter lets you specify why the user was muted. The duration for all mutes can be set in the bots' settings.",
     usage="members... [reason]",
+    invoke_without_command=True,
     aliases=["silence"]
   )
   @has_mod_role()
@@ -440,7 +441,24 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
         await member.dm_channel.send("".join(dm))
       except:
         pass #DM could not be sent
-
+  
+  @_mute.command(
+    name="set",
+    brief="Sets mute role channel permissions",
+    description="Will set permissions for mute role in specific channels.",
+    help="Note for moderators: if the optional `channels` parameter is unspecified, this will set permissions for all public channels.",
+  )
+  async def _mute_set(self, context, channels: commands.Greedy[discord.Member]):
+    public = True if not channels else False
+    await self.bot.set_mute_channel_permission(context.guild, channels, public)
+    await context.send("Channel permissions for mute role changed")
+    await self.bot.log_message(context.guild, "MOD_LOG",
+      user=context.author, action="set mute permissions",
+      timestamp=context.message.created_at,
+      fields={"Channels":"All public channels" if not channels else "\n".join([channel.mention for channel in channels])}
+    )
+    
+	  
   @commands.command(
     name="unmute",
     brief="Unmutes one or more users",

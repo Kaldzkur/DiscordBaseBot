@@ -98,9 +98,9 @@ class BaseBot(commands.Bot):
     )
     fields = {}
     if "user" in content:
-      if "action" not in content:
-        content["action"] = "invoked a command"
       if "target" in content:
+        if "action" not in content:
+          content["action"] = "was affected by a command"
         embed.set_author(
           name=f"{content['target'].display_name} {content['action']}",
           icon_url=content["target"].avatar_url
@@ -109,6 +109,8 @@ class BaseBot(commands.Bot):
         fields["User"] = f"{content['target'].mention}\n{content['target']}\nUID: {content['target'].id}"
         fields["Action by"] = f"{content['user'].mention}\n{content['user']}\nUID: {content['user'].id}"
       else:
+        if "action" not in content:
+          content["action"] = "invoked a command"
         embed.set_author(
           name=f"{content['user'].display_name} {content['action']}",
           icon_url=content["user"].avatar_url
@@ -543,41 +545,32 @@ class BaseBot(commands.Bot):
         hoist=False,
         mentionable=False
       )
-      mute_channel_permissions = discord.PermissionOverwrite(
-        create_instant_invite=False, manage_channels=False, manage_roles=False, manage_webhooks=False,
-        send_messages=False, send_tts_messages=False, manage_messages=False, embed_links=False, 
-        attach_files=False, mention_everyone=False, use_external_emojis=False, add_reactions=False,
-        priority_speaker=False, stream=False, connect=False, speak=False, mute_members=False, deafen_members=False,
-        move_members=False, use_voice_activation=False
-      )
-      #Restrict access to channels
-      for channel in guild.channels:
+      await self.set_mute_channel_permission(guild)
+	  
+  async def set_mute_channel_permission(self, guild, channels=None, public=True):
+    mute_permissions = discord.PermissionOverwrite(
+      create_instant_invite=False, manage_channels=False, manage_roles=False, manage_webhooks=False,
+      send_messages=False, send_tts_messages=False, manage_messages=False, embed_links=False, 
+      attach_files=False, mention_everyone=False, use_external_emojis=False, add_reactions=False,
+      priority_speaker=False, stream=False, connect=False, speak=False, mute_members=False, deafen_members=False,
+      move_members=False, use_voice_activation=False
+    )
+    mute_role = self.get_mute_role(guild)
+    #Restrict access to channels
+	candidate_channels = guild.channels if not channels else channels
+    for channel in candidate_channels:
+      if public: # skip the public channels
         everyone_permissions = channel.overwrites_for(guild.default_role)
         if everyone_permissions is None or everyone_permissions.pair()[1].view_channel is True:   #Deny-Pair
           #Skip private channels, we do not want Muted people to suddenly have access to the channel
           continue
-        try:
-          await channel.set_permissions(mute_role, overwrite=mute_channel_permissions)
-        except:
-          pass
+      try:
+        await channel.set_permissions(mute_role, overwrite=mute_permissions)
+      except:
+        pass
 
   async def on_guild_channel_create(self, channel):
-    everyone_permissions = channel.overwrites_for(channel.guild.default_role)
-    if everyone_permissions is None or everyone_permissions.pair()[1].view_channel is True:
-      #Skip private channels, we do not want Muted people to suddenly have access to the channel
-      return
-    mute_permissions = discord.PermissionOverwrite(
-      create_instant_invite=False, manage_channels=False, manage_roles=False, manage_webhooks=False, view_channel=True,
-      send_messages=False, send_tts_messages=False, manage_messages=False, embed_links=False, 
-      attach_files=False, read_message_history=True, mention_everyone=False, use_external_emojis=False, add_reactions=False,
-      priority_speaker=False, stream=False, connect=False, speak=False, mute_members=False, deafen_members=False,
-      move_members=False, use_voice_activation=False
-    )
-    mute_role = self.get_mute_role(channel.guild)
-    try:
-      await channel.set_permissions(mute_role, overwrite=mute_permissions)
-    except:
-      pass
+    await self.set_mute_channel_permission(channel.guild, [channel])
 
   def adjust_user_stats(self, guild, user, msg, cmd, wrd, rct, own):
     if hasattr(user, "id"):
