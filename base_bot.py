@@ -557,7 +557,7 @@ class BaseBot(commands.Bot):
     )
     mute_role = self.get_mute_role(guild)
     #Restrict access to channels
-	candidate_channels = guild.channels if not channels else channels
+    candidate_channels = guild.channels if not channels else channels
     for channel in candidate_channels:
       if public: # skip the public channels
         everyone_permissions = channel.overwrites_for(guild.default_role)
