@@ -28,7 +28,7 @@ def mod_role_check(context):
   else:
     if mod_role in context.author.roles:
       return True
-    raise commands.MissingRole(admin_role)
+    raise commands.MissingRole(mod_role)
   
 def has_mod_role():
   return commands.check(mod_role_check)
