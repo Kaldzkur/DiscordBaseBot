@@ -60,7 +60,9 @@ class MessageManagementCog(commands.Cog, name="Message Management Commands"):
     if hasattr(context.command, "on_error"):
       # This prevents any commands with local handlers being handled here.
       return
-    if isinstance(error, commands.BotMissingPermissions):
+    if isinstance(error, commands.MissingRole):
+      return
+    elif isinstance(error, commands.BotMissingPermissions):
       await context.send(f"Sorry {context.author.mention}, but I do not have permission to manage messages in the specific channel!")
     elif isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to manage messages in the specific channel!")

@@ -41,7 +41,9 @@ class ChannelManagementCog(commands.Cog, name="Channel Management Commands"):
     if hasattr(context.command, "on_error"):
       # This prevents any commands with local handlers being handled here.
       return
-    if isinstance(error, commands.MissingPermissions):
+    if isinstance(error, commands.MissingRole):
+      return
+    elif isinstance(error, commands.MissingPermissions):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to execute that command!")
     elif isinstance(error, commands.BotMissingPermissions):
       await context.send(f"Sorry {context.author.mention}, but I do not have permission to execute that command!")

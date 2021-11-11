@@ -25,7 +25,9 @@ class AdminCog(commands.Cog, name="Administration Commands"):
     if hasattr(context.command, "on_error"):
       # This prevents any commands with local handlers being handled here.
       return
-    if isinstance(error, commands.CheckFailure):
+    if isinstance(error, commands.MissingRole):
+      return
+    elif isinstance(error, commands.CheckFailure):
       await context.send(f"Sorry {context.author.mention}, but you do not have permission to execute that command.")
     elif isinstance(error, commands.UserInputError):
       await context.send(f"Sorry {context.author.mention}, but I could not understand the arguments passed to `{context.command.qualified_name}`.")
