@@ -169,7 +169,8 @@ class DetermInteractiveMessage(InteractiveMessage, ABC):
 class InteractiveSelectionMessage(InteractiveMessage):
   # Selections
   def __init__(self, selections, transfer, parent=None, **attributes):
-    assert callable(transfer), "The input transfer must be a function"
+    assert callable(transfer) and 0<transfer.__code__.co_argcount<=2, "The input transfer must be a function with 1 or 2 input arguments"
+    # transfer(ind) or transfer(ind, parent) outputs the new interactive message based on the selection index
     assert selections and isinstance(selections, list), "selections must be a non-empty list"
     super().__init__(parent, **attributes)
     self.selections = selections
@@ -179,7 +180,6 @@ class InteractiveSelectionMessage(InteractiveMessage):
     self.title = attributes.pop("title", "Please Make a Selection")
     self.description = attributes.pop("description", "")
     self.colour = attributes.pop("colour", discord.Embed.Empty)
-    self.keep_parent = attributes.pop("keep_parent", False)
     self.page = 1
     self.total_page = self.num//self.page_length + 1
     if self.total_page > 1:
@@ -199,8 +199,11 @@ class InteractiveSelectionMessage(InteractiveMessage):
       selection = ind + (self.page - 1) * self.page_length
       if selection >= self.num:
         return None
-      child = self.trans(selection)
-      if child.parent is None or self.keep_parent:
+      if self.trans.__code__.co_argcount == 1:
+        child = self.trans(selection)
+      else:
+        child = self.trans(selection, self)
+      if child.parent is None:
         child.set_parent(self)
       else:
         child.set_attributes(context=self.context, timeout=self.timeout, message=self.message)
