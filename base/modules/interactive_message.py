@@ -179,6 +179,7 @@ class InteractiveSelectionMessage(InteractiveMessage):
     self.title = attributes.pop("title", "Please Make a Selection")
     self.description = attributes.pop("description", "")
     self.colour = attributes.pop("colour", discord.Embed.Empty)
+    self.keep_parent = attributes.pop("keep_parent", False)
     self.page = 1
     self.total_page = self.num//self.page_length + 1
     if self.total_page > 1:
@@ -199,7 +200,7 @@ class InteractiveSelectionMessage(InteractiveMessage):
       if selection >= self.num:
         return None
       child = self.trans(selection)
-      if child.parent is None:
+      if child.parent is None or self.keep_parent:
         child.set_parent(self)
       else:
         child.set_attributes(context=self.context, timeout=self.timeout, message=self.message)
