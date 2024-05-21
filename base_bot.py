@@ -779,6 +779,8 @@ class BaseBot(commands.Bot):
       transFun=lambda x: int(x), checkFun=lambda x: x>=0, checkDescription="a non-negative integer"))
     self.add_default_setting(DefaultSetting(name="MODMAIL_EXPIRY", default=15.0, description="modmail expiry (min)", 
       transFun=lambda x: float(x), checkFun=lambda x: x>0, checkDescription="a positive number"))
+    self.add_default_setting(DefaultSetting(name="LEAVE_MSG", default=True, description="send message when user leaves ot not", 
+      transFun=lambda x: x.lower() in ("yes", "true", "t", "1"), checkDescription="boolean"))
       
     async def auto_modmail_change(value, context):
       await self.get_cog("General Commands").change_auto_delete(value, context.guild)

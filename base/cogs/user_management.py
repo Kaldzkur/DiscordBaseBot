@@ -210,7 +210,7 @@ class UserManagementCog(commands.Cog, name="User Management Commands"):
       channel = discord.utils.get(member.guild.text_channels, name="general")
     if channel is None:
       channel = discord.utils.get(member.guild.text_channels, name="general-chat")
-    if channel is not None:
+    if channel is not None and self.bot.get_setting(member.guild, "LEAVE_MSG"):
       await channel.send(f"{member} just left the server. :sob:")
     await self.bot.log_message(member.guild, "AUDIT_LOG",
       user=member, action="left the server",
